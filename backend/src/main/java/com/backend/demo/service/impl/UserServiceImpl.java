@@ -105,7 +105,7 @@ public class UserServiceImpl implements IUserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
-    
+
     // MÉTODOS PRIVADOS
 
     private User findUserById(Long id) {
@@ -126,5 +126,15 @@ public class UserServiceImpl implements IUserService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Rol no válido: " + name);
         }
+    }
+
+    @Override
+    public Page<UserActionResponse> getUserActions(Pageable pageable) {
+        return userActionRepository.findAll(pageable)
+                .map(action -> new UserActionResponse(
+                        action.getUser().getEmail(),
+                        action.getAction(),
+                        action.getCreatedAt()
+                ));
     }
 }

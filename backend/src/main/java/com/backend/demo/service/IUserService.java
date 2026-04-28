@@ -3,6 +3,7 @@ package com.backend.demo.service;
 import com.backend.demo.dto.request.RegisterRequest;
 import com.backend.demo.dto.response.UserResponse;
 import com.backend.demo.model.enums.ERole;
+import com.backend.demo.dto.response.UserActionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,4 +26,6 @@ public interface IUserService {
     UserResponse deactivateUser(Long id);
 
     UserResponse assignRoles(Long id, Set<String> roles);
+
+    Page<UserActionResponse> getUserActions(Pageable pageable);
 }

@@ -2,7 +2,7 @@ package com.backend.demo.controller;
 
 import com.backend.demo.dto.request.AssignRolesRequest;
 import com.backend.demo.dto.request.RegisterRequest;
-import com.backend.demo.dto.request.UpdateUserRequest;
+import com.backend.demo.dto.response.UserActionResponse;
 import com.backend.demo.dto.response.UserResponse;
 import com.backend.demo.model.enums.ERole;
 import com.backend.demo.service.IUserService;
@@ -87,6 +87,10 @@ public class UserController {
         return ResponseEntity.ok(userService.assignRoles(id, request.getRoles()));
     }
 
+    @GetMapping("/actions")
+    public ResponseEntity<Page<UserActionResponse>> getUserActions(Pageable pageable) {
+        return ResponseEntity.ok(userService.getUserActions(pageable));
+    }
 
 
 }
