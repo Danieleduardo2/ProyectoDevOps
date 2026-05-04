@@ -1,0 +1,59 @@
+name: Semgrep SAST Analysis
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  semgrep-develop:
+    name: Semgrep Scan (develop - no bloquea)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'pull_request' && github.base_ref == 'develop')
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Ejecutar Semgrep en develop
+        run: |
+          semgrep ci \
+            --config=auto \
+            --include="**/*.java" \
+            --include="**/*.ts" \
+            --include="**/*.css"
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+  semgrep-main:
+    name: Semgrep Scan (main - bloquea si hay errores)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.base_ref == 'main')
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Ejecutar Semgrep en main
+        run: |
+          semgrep ci \
+            --config=auto \
+            --severity=ERROR \
+            --include="**/*.java" \
+            --include="**/*.ts" \
+            --include="**/*.css"
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: false
