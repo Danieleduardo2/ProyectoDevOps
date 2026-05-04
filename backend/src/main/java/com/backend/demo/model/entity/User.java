@@ -32,8 +32,13 @@ public class User {
 
     private String password;
 
+    @Builder.Default
     private boolean activo = true;
+
+    @Builder.Default
     private boolean locked = false;
+
+    @Builder.Default
     private int failedAttempts = 0;
 
     private LocalDateTime lockTime;

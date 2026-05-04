@@ -9,6 +9,7 @@ import com.backend.demo.model.entity.Role;
 import com.backend.demo.model.entity.User;
 import com.backend.demo.repository.RoleRepository;
 import com.backend.demo.repository.UserRepository;
+import com.backend.demo.repository.UserActionRepository;
 import com.backend.demo.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.backend.demo.dto.response.UserActionResponse;
 
 @Service
 @Transactional
@@ -28,6 +30,7 @@ public class UserServiceImpl implements IUserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final UserActionRepository userActionRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
@@ -131,10 +134,12 @@ public class UserServiceImpl implements IUserService {
     @Override
     public Page<UserActionResponse> getUserActions(Pageable pageable) {
         return userActionRepository.findAll(pageable)
-                .map(action -> new UserActionResponse(
-                        action.getUser().getEmail(),
-                        action.getAction(),
-                        action.getCreatedAt()
-                ));
+                .map(action -> UserActionResponse.builder()
+                        .id(action.getId())
+                        .tipo(action.getTipo())
+                        .descripcion(action.getDescripcion())
+                        .fecha(action.getFecha())
+                        .build()
+                );
     }
 }
