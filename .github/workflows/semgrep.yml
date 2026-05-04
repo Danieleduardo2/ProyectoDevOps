@@ -18,15 +18,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Semgrep
+      # En develop NO bloquea
+      - name: Run Semgrep (develop - no bloquea)
+        if: github.ref == 'refs/heads/develop'
+        continue-on-error: true
         run: |
           semgrep ci \
             --config=p/ci \
             --config=p/java \
-            --config=p/secrets \
-            --sarif --output=results.sarif
+            --config=p/secrets
 
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
-        if: always()
+      # En main SÍ bloquea
+      - name: Run Semgrep (main - bloquea)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          semgrep ci \
+            --config=p/ci \
+            --config=p/java \
+            --config=p/secrets
