@@ -2,6 +2,8 @@ package com.backend.demo.model.entity;
 
 import com.backend.demo.model.enums.InscripcionStatus;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -14,6 +16,11 @@ import java.time.LocalDateTime;
                 )
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Inscripcion {
 
     @Id
@@ -40,14 +47,4 @@ public class Inscripcion {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Getters y setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public User getUsuario() { return usuario; }
-    public void setUsuario(User usuario) { this.usuario = usuario; }
-    public Event getEvento() { return evento; }
-    public void setEvento(Event evento) { this.evento = evento; }
-    public InscripcionStatus getEstado() { return estado; }
-    public void setEstado(InscripcionStatus estado) { this.estado = estado; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
 }
