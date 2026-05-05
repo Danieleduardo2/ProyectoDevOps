@@ -95,7 +95,7 @@ public class DataInitializer implements CommandLineRunner {
         for (TestDataSeeder user : testUsers) {
             log.info("");
             log.info("  Email    : {}", user.getEmail());
-            log.info("  Password : {}", user.getPassword());
+            log.info("  Password :");
             log.info("  Rol      : {}", user.getRole().name());
         }
 
