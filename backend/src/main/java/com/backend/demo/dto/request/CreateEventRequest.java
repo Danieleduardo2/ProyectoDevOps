@@ -43,7 +43,5 @@ public class CreateEventRequest {
     @Min(value = 0, message = "Los cupos de parqueadero no pueden ser negativos")
     private Integer parkingSpots = 0;
 
-    @NotNull(message = "El ID del creador es obligatorio")
-    private Long createdById;
 
 }
