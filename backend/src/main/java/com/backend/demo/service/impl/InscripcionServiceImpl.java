@@ -3,6 +3,7 @@ package com.backend.demo.service.impl;
 import com.backend.demo.dto.request.CreateInscripcionRequest;
 import com.backend.demo.dto.response.EventoInscritosResponse;
 import com.backend.demo.dto.response.InscripcionResponse;
+import com.backend.demo.exception.AccessDeniedException;
 import com.backend.demo.exception.BadRequestException;
 import com.backend.demo.exception.ResourceNotFoundException;
 import com.backend.demo.model.entity.Event;
@@ -13,63 +14,67 @@ import com.backend.demo.model.enums.InscripcionStatus;
 import com.backend.demo.repository.EventRepository;
 import com.backend.demo.repository.InscripcionRepository;
 import com.backend.demo.repository.UserRepository;
+import com.backend.demo.security.services.UserInfoDetail;
 import com.backend.demo.service.IInscripcionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class InscripcionServiceImpl implements IInscripcionService {
-
-    @Autowired
-    private InscripcionRepository inscripcionRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private EventRepository eventRepository;
+    private final InscripcionRepository inscripcionRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
 
     // ==================== CREAR INSCRIPCIÓN ====================
 
+    @Transactional
     @Override
     public InscripcionResponse createInscripcion(CreateInscripcionRequest request) {
-        // Validar que el usuario exista
-        User usuario = userRepository.findById(request.getUsuarioId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuario no encontrado con ID: " + request.getUsuarioId()));
 
-        // Validar que el evento exista
+        // Obtener usuario autenticado
+        UserInfoDetail userDetail = getAuthenticatedUser();
+
+        User usuario = userRepository.findById(userDetail.getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuario autenticado no encontrado"));
+
+        // Buscar evento
         Event evento = eventRepository.findById(request.getEventoId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Evento no encontrado con ID: " + request.getEventoId()));
 
-        // Validar que el evento esté disponible
+        // Validar estado del evento
         validarEventoDisponible(evento);
 
-        // Validar cupos disponibles
-        validarCuposDisponibles(evento);
-
-        // Validar que el usuario no esté ya inscrito
+        // Validar que el usuario NO esté inscrito
         validarNoInscritoPreview(usuario.getId(), evento.getId());
 
-        // Crear la inscripción
-        Inscripcion inscripcion = new Inscripcion();
-        inscripcion.setUsuario(usuario);
-        inscripcion.setEvento(evento);
-        inscripcion.setEstado(InscripcionStatus.CONFIRMADA);
+        // Validar cupos disponibles
+        if (!evento.tieneCuposDisponibles()) {
+            throw new IllegalStateException("No hay cupos disponibles para este evento");
+        }
 
-        // Actualizar contador del evento
+        // Crear inscripción
+        Inscripcion inscripcion = Inscripcion.builder()
+                .usuario(usuario)
+                .evento(evento)
+                .estado(InscripcionStatus.CONFIRMADA)
+                .build();
+
+        // Actualizar contador
         evento.incrementarInscritos();
-        eventRepository.save(evento);
 
         // Guardar inscripción
-        Inscripcion inscripcionCreada = inscripcionRepository.save(inscripcion);
+        Inscripcion saved = inscripcionRepository.save(inscripcion);
 
-        return mapToResponse(inscripcionCreada);
+        return mapToResponse(saved);
     }
 
     // ==================== CANCELAR INSCRIPCIÓN ====================
@@ -201,6 +206,16 @@ public class InscripcionServiceImpl implements IInscripcionService {
             throw new BadRequestException("ya inscrito");
         }
     }
+
+    private UserInfoDetail getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserInfoDetail user)) {
+            throw new AccessDeniedException("Usuario no autenticado");
+        }
+        return user;
+    }
+
 
     // ==================== MAPEO ====================
 
