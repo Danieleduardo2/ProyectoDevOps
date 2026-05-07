@@ -21,9 +21,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findByEstado(EventStatus estado);
 
     // Filtrar por nombre y estado con paginación
-    @Query("SELECT e FROM Event e WHERE " +
-            "(:nombre IS NULL OR LOWER(e.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) AND " +
-            "(:estado IS NULL OR e.estado = :estado)")
+    @Query("""
+    SELECT e FROM Event e
+    WHERE (:nombre IS NULL OR LOWER(CAST(e.nombre AS string))
+           LIKE LOWER(CONCAT('%', CAST(:nombre AS string), '%')))
+    AND (:estado IS NULL OR e.estado = :estado)
+""")
     Page<Event> findByFilters(
             @Param("nombre") String nombre,
             @Param("estado") EventStatus estado,

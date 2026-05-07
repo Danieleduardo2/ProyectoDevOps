@@ -43,5 +43,4 @@ public class CreateEventRequest {
     @Min(value = 0, message = "Los cupos de parqueadero no pueden ser negativos")
     private Integer parkingSpots = 0;
 
-
 }
