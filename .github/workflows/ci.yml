@@ -33,6 +33,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      - name: Dar permisos a mvnw
+        working-directory: backend
+        run: chmod +x mvnw
+
       - name: Compilar proyecto
         working-directory: backend
         run: ./mvnw clean compile -DskipTests
