@@ -24,22 +24,11 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Cache Maven
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Dar permisos a mvnw
-        working-directory: backend
-        run: chmod +x mvnw
+          cache: 'maven'
 
       - name: Compilar proyecto
         working-directory: backend
-        run: ./mvnw clean compile -DskipTests
+        run: mvn clean compile -DskipTests
 
       - name: Ejecutar tests
         working-directory: backend
@@ -48,4 +37,4 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-        run: ./mvnw test -Dspring.profiles.active=test
+        run: mvn test -Dspring.profiles.active=test
