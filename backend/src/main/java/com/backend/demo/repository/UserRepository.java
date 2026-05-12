@@ -24,9 +24,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Consulta personalizada con filtros opcionales usando JPQL.
     // Permite buscar usuarios por nombre y apellido de forma flexible.
     // Si algún parámetro es NULL, ese filtro se ignora.
-    @Query("SELECT u FROM User u WHERE " +
-            "(:nombre IS NULL OR LOWER(u.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) AND " +
-            "(:apellido IS NULL OR LOWER(u.apellido) LIKE LOWER(CONCAT('%', :apellido, '%')))")
+    @Query("""
+        SELECT u FROM User u
+        WHERE (:nombre IS NULL OR
+               LOWER(u.nombre)
+               LIKE LOWER(CONCAT('%', CAST(:nombre AS string), '%')))
+        AND (:apellido IS NULL OR
+               LOWER(u.apellido)
+               LIKE LOWER(CONCAT('%', CAST(:apellido AS string), '%')))
+        """)
     Page<User> findByFilters(
             @Param("nombre") String nombre,
             @Param("apellido") String apellido,
