@@ -62,4 +62,8 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
      */
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inscripcion i WHERE i.usuario.id = :usuarioId AND i.evento.id = :eventoId AND i.estado = 'CONFIRMADA'")
     boolean hasActiveInscription(@Param("usuarioId") Long usuarioId, @Param("eventoId") Long eventoId);
+
+    java.util.List<Inscripcion> findByEventoIdAndEstado(Long eventoId, InscripcionStatus estado);
+
+    java.util.List<Inscripcion> findByEvento_FechaAndEvento_EstadoAndEstado(java.time.LocalDate fecha, com.backend.demo.model.enums.EventStatus estado, InscripcionStatus inscripcionStatus);
 }

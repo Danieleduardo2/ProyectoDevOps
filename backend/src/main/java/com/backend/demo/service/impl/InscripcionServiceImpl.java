@@ -15,6 +15,7 @@ import com.backend.demo.repository.EventRepository;
 import com.backend.demo.repository.InscripcionRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.security.services.UserInfoDetail;
+import com.backend.demo.service.IEmailNotificationService;
 import com.backend.demo.service.IInscripcionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,7 @@ public class InscripcionServiceImpl implements IInscripcionService {
     private final InscripcionRepository inscripcionRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final IEmailNotificationService emailNotificationService;
 
     // ==================== CREAR INSCRIPCIÓN ====================
 
@@ -73,6 +75,9 @@ public class InscripcionServiceImpl implements IInscripcionService {
 
         // Guardar inscripción
         Inscripcion saved = inscripcionRepository.save(inscripcion);
+
+        // Enviar notificación asíncrona al usuario
+        emailNotificationService.sendInscripcionConfirmation(saved);
 
         return mapToResponse(saved);
     }
