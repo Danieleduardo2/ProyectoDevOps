@@ -1,6 +1,7 @@
 package com.backend.demo.repository;
 
 import com.backend.demo.model.entity.Inscripcion;
+import com.backend.demo.model.enums.EventStatus;
 import com.backend.demo.model.enums.InscripcionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +66,9 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inscripcion i WHERE i.usuario.id = :usuarioId AND i.evento.id = :eventoId AND i.estado = 'CONFIRMADA'")
     boolean hasActiveInscription(@Param("usuarioId") Long usuarioId, @Param("eventoId") Long eventoId);
 
+    List<Inscripcion> findByEventoIdAndEstado(Long eventoId, InscripcionStatus estado);
+
+    List<Inscripcion> findByEvento_FechaAndEvento_EstadoAndEstado(LocalDate fecha, EventStatus estado, InscripcionStatus inscripcionStatus);
     Optional<Inscripcion> findByQrToken(String qrToken);
 
     /** Devuelve todos los inscritos de un evento (para reporte). */
