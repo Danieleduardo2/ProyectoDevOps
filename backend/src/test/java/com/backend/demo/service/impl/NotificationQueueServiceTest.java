@@ -2,10 +2,11 @@ package com.backend.demo.service.impl;
 
 import com.backend.demo.dto.notification.EmailNotificationRequest;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
@@ -19,35 +20,42 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class NotificationQueueServiceTest {
 
-    @Autowired
+    @InjectMocks
     private NotificationQueueService notificationQueueService;
 
-   @MockitoBean
+    @Mock
     private JavaMailSender mailSender;
 
     @Test
     void shouldEnqueueEmailAndProcessWithoutBlocking() throws Exception {
+        // Configuramos el mock para la creación del mensaje
         MimeMessage message = new MimeMessage((Session) null);
         when(mailSender.createMimeMessage()).thenReturn(message);
 
+        // Configuramos el CountDownLatch para esperar la respuesta asíncrona
         CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {
             latch.countDown();
             return null;
         }).when(mailSender).send(any(MimeMessage.class));
 
+        // Preparamos los datos de prueba
         EmailNotificationRequest request = EmailNotificationRequest.builder()
                 .to("test@example.com")
                 .subject("Prueba de cola SMTP")
                 .htmlBody("<p>Este es un correo de prueba.</p>")
                 .build();
 
+        // Ejecutamos el método que encola
         notificationQueueService.enqueue(request);
 
+        // Esperamos máximo 5 segundos para que el hilo secundario procese la cola
         boolean processed = latch.await(5, TimeUnit.SECONDS);
+        
+        // Verificamos los resultados
         assertTrue(processed, "El correo encolado debe ser procesado por el worker");
         verify(mailSender, times(1)).send(message);
     }
