@@ -25,7 +25,7 @@ class NotificationQueueServiceTest {
     @Autowired
     private NotificationQueueService notificationQueueService;
 
-    @MockBean
+   @MockitoBean
     private JavaMailSender mailSender;
 
     @Test
