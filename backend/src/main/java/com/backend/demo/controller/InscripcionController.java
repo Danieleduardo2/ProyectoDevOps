@@ -1,8 +1,11 @@
 package com.backend.demo.controller;
 
+import com.backend.demo.dto.request.CheckinRequest;
 import com.backend.demo.dto.request.CreateInscripcionRequest;
+import com.backend.demo.dto.response.CheckinResponse;
 import com.backend.demo.dto.response.EventoInscritosResponse;
 import com.backend.demo.dto.response.InscripcionResponse;
+import com.backend.demo.dto.response.ReporteAsistenciaResponse;
 import com.backend.demo.service.IInscripcionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +14,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Controller para gestionar inscripciones a eventos
@@ -103,5 +108,38 @@ public class InscripcionController {
     public ResponseEntity<Void> deleteInscripcion(@PathVariable Long id) {
         inscripcionService.deleteInscripcion(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Devuelve la URL del código QR de la inscripción.
+     */
+    @GetMapping("/inscripciones/{id}/qr")
+    public ResponseEntity<Map<String, String>> getQr(@PathVariable Long id) {
+        String url = inscripcionService.getQrUrl(id);
+        return ResponseEntity.ok(Map.of("qrUrl", url));
+    }
+
+    // ── Check-in ─────────────────────────────────────────────────
+
+    /**
+     * Valida el QR y registra la asistencia del participante.
+     */
+    @PostMapping("/eventos/{eventoId}/checkin")
+    @PreAuthorize("hasRole('ORGANIZADOR') or hasRole('ADMIN')")
+    public ResponseEntity<CheckinResponse> checkin(
+            @PathVariable Long eventoId,
+            @Valid @RequestBody CheckinRequest request) {
+        return ResponseEntity.ok(inscripcionService.realizarCheckin(eventoId, request));
+    }
+
+    // Reporte
+
+    /**
+     * Retorna inscritos vs asistentes con detalle completo.
+     */
+    @GetMapping("/eventos/{id}/reporte")
+    @PreAuthorize("hasRole('ORGANIZADOR') or hasRole('ADMIN')")
+    public ResponseEntity<ReporteAsistenciaResponse> reporte(@PathVariable Long id) {
+        return ResponseEntity.ok(inscripcionService.getReporteAsistencia(id));
     }
 }
