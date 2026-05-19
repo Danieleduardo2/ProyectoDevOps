@@ -43,11 +43,8 @@ public class InscripcionServiceImpl implements IInscripcionService {
     private final InscripcionRepository inscripcionRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
-<<<<<<< HEAD
     private final IEmailNotificationService emailNotificationService;
-=======
     private final QrService qrService;          // ← nuevo
->>>>>>> 41d408940bec3ea7dfe1cb34143428d35a21d5f9
 
     // ==================== CREAR INSCRIPCIÓN ====================
 
@@ -85,13 +82,10 @@ public class InscripcionServiceImpl implements IInscripcionService {
         evento.incrementarInscritos();
 
         Inscripcion saved = inscripcionRepository.save(inscripcion);
-<<<<<<< HEAD
 
         // Enviar notificación asíncrona al usuario
         emailNotificationService.sendInscripcionConfirmation(saved);
 
-=======
->>>>>>> 41d408940bec3ea7dfe1cb34143428d35a21d5f9
         return mapToResponse(saved);
     }
 

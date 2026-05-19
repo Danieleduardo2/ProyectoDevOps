@@ -68,7 +68,6 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
     java.util.List<Inscripcion> findByEventoIdAndEstado(Long eventoId, InscripcionStatus estado);
 
     java.util.List<Inscripcion> findByEvento_FechaAndEvento_EstadoAndEstado(java.time.LocalDate fecha, com.backend.demo.model.enums.EventStatus estado, InscripcionStatus inscripcionStatus);
-=======
     Optional<Inscripcion> findByQrToken(String qrToken);
 
     /** Devuelve todos los inscritos de un evento (para reporte). */
@@ -88,5 +87,4 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
               AND i.asistio   = true
             """)
     long countAsistentesByEventoId(@Param("eventoId") Long eventoId);
->>>>>>> 41d408940bec3ea7dfe1cb34143428d35a21d5f9
 }
