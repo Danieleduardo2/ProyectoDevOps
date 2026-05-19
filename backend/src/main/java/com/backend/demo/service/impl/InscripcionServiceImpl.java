@@ -1,8 +1,12 @@
 package com.backend.demo.service.impl;
 
+import com.backend.demo.dto.request.CheckinRequest;
 import com.backend.demo.dto.request.CreateInscripcionRequest;
+import com.backend.demo.dto.response.CheckinResponse;
 import com.backend.demo.dto.response.EventoInscritosResponse;
 import com.backend.demo.dto.response.InscripcionResponse;
+import com.backend.demo.dto.response.ReporteAsistenciaResponse;
+import com.backend.demo.dto.response.ReporteAsistenciaResponse.AsistenteDetalleResponse;
 import com.backend.demo.exception.AccessDeniedException;
 import com.backend.demo.exception.BadRequestException;
 import com.backend.demo.exception.ResourceNotFoundException;
@@ -16,6 +20,7 @@ import com.backend.demo.repository.InscripcionRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.security.services.UserInfoDetail;
 import com.backend.demo.service.IInscripcionService;
+import com.backend.demo.service.QrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,60 +29,167 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class InscripcionServiceImpl implements IInscripcionService {
+
     private final InscripcionRepository inscripcionRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final QrService qrService;          // ← nuevo
 
     // ==================== CREAR INSCRIPCIÓN ====================
 
-    @Transactional
     @Override
     public InscripcionResponse createInscripcion(CreateInscripcionRequest request) {
 
-        // Obtener usuario autenticado
         UserInfoDetail userDetail = getAuthenticatedUser();
 
         User usuario = userRepository.findById(userDetail.getId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Usuario autenticado no encontrado"));
 
-        // Buscar evento
         Event evento = eventRepository.findById(request.getEventoId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Evento no encontrado con ID: " + request.getEventoId()));
 
-        // Validar estado del evento
         validarEventoDisponible(evento);
-
-        // Validar que el usuario NO esté inscrito
         validarNoInscritoPreview(usuario.getId(), evento.getId());
 
-        // Validar cupos disponibles
         if (!evento.tieneCuposDisponibles()) {
             throw new IllegalStateException("No hay cupos disponibles para este evento");
         }
 
-        // Crear inscripción
+        // Generar token UUID único para el QR
+        String qrToken = UUID.randomUUID().toString();
+
         Inscripcion inscripcion = Inscripcion.builder()
                 .usuario(usuario)
                 .evento(evento)
                 .estado(InscripcionStatus.CONFIRMADA)
+                .qrToken(qrToken)           // ← persistir token
+                .asistio(false)
                 .build();
 
-        // Actualizar contador
         evento.incrementarInscritos();
 
-        // Guardar inscripción
         Inscripcion saved = inscripcionRepository.save(inscripcion);
-
         return mapToResponse(saved);
     }
 
-    // ==================== CANCELAR INSCRIPCIÓN ====================
+    // ==================== QR ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getQrUrl(Long inscripcionId) {
+        Inscripcion inscripcion = inscripcionRepository.findById(inscripcionId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Inscripción no encontrada con ID: " + inscripcionId));
+
+        return qrService.generarUrlQr(inscripcion.getQrToken());
+    }
+
+    // ==================== CHECK-IN ====================
+
+    @Override
+    public CheckinResponse realizarCheckin(Long eventoId, CheckinRequest request) {
+
+        // 1. Buscar la inscripción por token
+        Inscripcion inscripcion = inscripcionRepository.findByQrToken(request.getToken())
+                .orElseThrow(() -> new BadRequestException(
+                        "El código QR no es válido o no corresponde a ninguna inscripción"));
+
+        // 2. Validar que el token pertenezca a ESTE evento
+        if (!inscripcion.getEvento().getId().equals(eventoId)) {
+            throw new BadRequestException(
+                    "El código QR corresponde a un evento diferente al que se está registrando");
+        }
+
+        // 3. Rechazar inscripciones canceladas
+        if (inscripcion.getEstado() == InscripcionStatus.CANCELADA) {
+            throw new BadRequestException(
+                    "No se puede hacer check-in: la inscripción se encuentra cancelada");
+        }
+
+        // 4. Rechazar QR ya utilizado
+        if (inscripcion.isAsistio()) {
+            throw new BadRequestException(
+                    "El código QR ya fue utilizado. No se permite un segundo check-in");
+        }
+
+        // 5. Marcar asistencia
+        inscripcion.setAsistio(true);
+        inscripcion.setCheckinAt(LocalDateTime.now());
+        inscripcion.setEstado(InscripcionStatus.ASISTIDA);
+        inscripcionRepository.save(inscripcion);
+
+        User usuario = inscripcion.getUsuario();
+        Event evento = inscripcion.getEvento();
+
+        return CheckinResponse.builder()
+                .inscripcionId(inscripcion.getId())
+                .usuarioId(usuario.getId())
+                .usuarioNombre(usuario.getNombre() + " " + usuario.getApellido())
+                .eventoId(evento.getId())
+                .eventoNombre(evento.getNombre())
+                .checkinAt(inscripcion.getCheckinAt())
+                .mensaje("¡Check-in registrado exitosamente! Bienvenido al evento.")
+                .build();
+    }
+
+    // REPORTE
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReporteAsistenciaResponse getReporteAsistencia(Long eventoId) {
+
+        Event evento = eventRepository.findById(eventoId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Evento no encontrado con ID: " + eventoId));
+
+        List<Inscripcion> inscripciones =
+                inscripcionRepository.findAllByEventoIdForReporte(eventoId);
+
+        int totalInscritos  = inscripciones.size();
+        int totalAsistentes = (int) inscripciones.stream()
+                .filter(Inscripcion::isAsistio).count();
+        int totalAusentes   = totalInscritos - totalAsistentes;
+
+        double porcentaje = totalInscritos > 0
+                ? Math.round((totalAsistentes * 100.0 / totalInscritos) * 100.0) / 100.0
+                : 0.0;
+
+        List<AsistenteDetalleResponse> detalle = inscripciones.stream()
+                .map(i -> AsistenteDetalleResponse.builder()
+                        .inscripcionId(i.getId())
+                        .usuarioId(i.getUsuario().getId())
+                        .nombreCompleto(i.getUsuario().getNombre() + " "
+                                + i.getUsuario().getApellido())
+                        .email(i.getUsuario().getEmail())
+                        .estadoInscripcion(i.getEstado().name())
+                        .asistio(i.isAsistio())
+                        .checkinAt(i.getCheckinAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ReporteAsistenciaResponse.builder()
+                .eventoId(evento.getId())
+                .eventoNombre(evento.getNombre())
+                .totalInscritos(totalInscritos)
+                .totalAsistentes(totalAsistentes)
+                .totalAusentes(totalAusentes)
+                .porcentajeAsistencia(porcentaje)
+                .inscritos(detalle)
+                .build();
+    }
+
+    // ==================== CANCELAR ====================
 
     @Override
     public InscripcionResponse cancelarInscripcion(Long id) {
@@ -85,21 +197,16 @@ public class InscripcionServiceImpl implements IInscripcionService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Inscripción no encontrada con ID: " + id));
 
-        // Validar que no esté ya cancelada
         if (inscripcion.getEstado() == InscripcionStatus.CANCELADA) {
             throw new BadRequestException("La inscripción ya estaba cancelada.");
         }
 
-        // Decrementar contador del evento
         Event evento = inscripcion.getEvento();
         evento.decrementarInscritos();
         eventRepository.save(evento);
 
-        // Cambiar estado a cancelada (lógica)
         inscripcion.setEstado(InscripcionStatus.CANCELADA);
-        Inscripcion inscripcionCancelada = inscripcionRepository.save(inscripcion);
-
-        return mapToResponse(inscripcionCancelada);
+        return mapToResponse(inscripcionRepository.save(inscripcion));
     }
 
     // ==================== CONSULTAS ====================
@@ -116,114 +223,66 @@ public class InscripcionServiceImpl implements IInscripcionService {
     @Override
     @Transactional(readOnly = true)
     public Page<InscripcionResponse> getInscripcionesByUsuario(Long usuarioId, Pageable pageable) {
-        // Validar que el usuario exista
         if (!userRepository.existsById(usuarioId)) {
-            throw new ResourceNotFoundException(
-                    "Usuario no encontrado con ID: " + usuarioId);
+            throw new ResourceNotFoundException("Usuario no encontrado con ID: " + usuarioId);
         }
-
-        // Obtener inscripciones paginadas
-        Page<Inscripcion> inscripciones = inscripcionRepository.findByUsuarioId(usuarioId, pageable);
-        
-        // Mapear a DTO
-        return inscripciones.map(this::mapToResponse);
+        return inscripcionRepository.findByUsuarioId(usuarioId, pageable)
+                .map(this::mapToResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public EventoInscritosResponse getInscripcionesByEvento(Long eventoId, Pageable pageable) {
-        // Validar que el evento exista
         Event evento = eventRepository.findById(eventoId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Evento no encontrado con ID: " + eventoId));
 
-        // Obtener inscripciones con paginación
-        Page<Inscripcion> inscripciones = inscripcionRepository.findByEventoId(eventoId, pageable);
-        Page<InscripcionResponse> inscripcionesResponse = inscripciones.map(this::mapToResponse);
+        Page<InscripcionResponse> inscripcionesResponse =
+                inscripcionRepository.findByEventoId(eventoId, pageable)
+                        .map(this::mapToResponse);
 
-        // Calcular estadísticas
-        Integer totalCupos = evento.getCapacidadMaxima();
-        Integer cuposUsados = evento.getInscritosCount();
+        Integer totalCupos       = evento.getCapacidadMaxima();
+        Integer cuposUsados      = evento.getInscritosCount();
         Integer cuposDisponibles = totalCupos - cuposUsados;
 
         return new EventoInscritosResponse(
-                inscripcionesResponse,
-                totalCupos,
-                cuposUsados,
-                cuposDisponibles
-        );
+                inscripcionesResponse, totalCupos, cuposUsados, cuposDisponibles);
     }
 
     @Override
     public void deleteInscripcion(Long id) {
         if (!inscripcionRepository.existsById(id)) {
-            throw new ResourceNotFoundException(
-                    "Inscripción no encontrada con ID: " + id);
+            throw new ResourceNotFoundException("Inscripción no encontrada con ID: " + id);
         }
         inscripcionRepository.deleteById(id);
     }
 
-    // ==================== VALIDACIONES ====================
+    // ==================== VALIDACIONES PRIVADAS ====================
 
-    /**
-     * Valida que el evento esté disponible para nuevas inscripciones
-     * @param evento evento a validar
-     * @throws BadRequestException si el evento no está disponible
-     */
     private void validarEventoDisponible(Event evento) {
-        if (evento.getEstado() == EventStatus.CANCELLED) {
-            throw new BadRequestException("evento no disponible");
-        }
-
-        if (evento.getEstado() == EventStatus.DRAFT) {
-            throw new BadRequestException("evento no disponible");
-        }
-
-        if (evento.getEstado() == EventStatus.COMPLETED) {
-            throw new BadRequestException("evento no disponible");
+        if (evento.getEstado() == EventStatus.CANCELLED
+                || evento.getEstado() == EventStatus.DRAFT
+                || evento.getEstado() == EventStatus.COMPLETED) {
+            throw new BadRequestException("El evento no está disponible para inscripciones");
         }
     }
 
-    /**
-     * Valida que el evento tenga cupos disponibles
-     * @param evento evento a validar
-     * @throws BadRequestException si no hay cupos disponibles
-     */
-    private void validarCuposDisponibles(Event evento) {
-        if (evento.getInscritosCount() >= evento.getCapacidadMaxima()) {
-            throw new BadRequestException("cupos agotados");
-        }
-    }
-
-    /**
-     * Valida que el usuario no esté ya inscrito al evento
-     * @param usuarioId ID del usuario
-     * @param eventoId ID del evento
-     * @throws BadRequestException si el usuario ya está inscrito
-     */
     private void validarNoInscritoPreview(Long usuarioId, Long eventoId) {
         if (inscripcionRepository.hasActiveInscription(usuarioId, eventoId)) {
-            throw new BadRequestException("ya inscrito");
+            throw new BadRequestException("El usuario ya se encuentra inscrito en este evento");
         }
     }
 
     private UserInfoDetail getAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserInfoDetail user)) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserInfoDetail user)) {
             throw new AccessDeniedException("Usuario no autenticado");
         }
         return user;
     }
 
-
     // ==================== MAPEO ====================
 
-    /**
-     * Mapea una entidad Inscripcion a su DTO de respuesta
-     * @param inscripcion inscripción a mapear
-     * @return DTO InscripcionResponse
-     */
     private InscripcionResponse mapToResponse(Inscripcion inscripcion) {
         InscripcionResponse response = new InscripcionResponse();
         response.setId(inscripcion.getId());
@@ -236,9 +295,9 @@ public class InscripcionServiceImpl implements IInscripcionService {
         response.setCreatedAt(inscripcion.getCreatedAt());
         response.setCuposRestantes(
                 inscripcion.getEvento().getCapacidadMaxima()
-                        - inscripcion.getEvento().getInscritosCount()
-        );
-
+                        - inscripcion.getEvento().getInscritosCount());
+        // URL del QR disponible en la respuesta de consulta
+        response.setQrUrl(qrService.generarUrlQr(inscripcion.getQrToken()));
         return response;
     }
 }

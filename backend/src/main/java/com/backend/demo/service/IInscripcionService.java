@@ -1,8 +1,11 @@
 package com.backend.demo.service;
 
+import com.backend.demo.dto.request.CheckinRequest;
 import com.backend.demo.dto.request.CreateInscripcionRequest;
+import com.backend.demo.dto.response.CheckinResponse;
 import com.backend.demo.dto.response.EventoInscritosResponse;
 import com.backend.demo.dto.response.InscripcionResponse;
+import com.backend.demo.dto.response.ReporteAsistenciaResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -63,4 +66,9 @@ public interface IInscripcionService {
      * @throws ResourceNotFoundException si la inscripción no existe
      */
     void deleteInscripcion(Long id);
+
+
+    String getQrUrl(Long inscripcionId);
+    CheckinResponse realizarCheckin(Long eventoId, CheckinRequest request);
+    ReporteAsistenciaResponse getReporteAsistencia(Long eventoId);
 }
