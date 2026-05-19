@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -63,7 +64,29 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inscripcion i WHERE i.usuario.id = :usuarioId AND i.evento.id = :eventoId AND i.estado = 'CONFIRMADA'")
     boolean hasActiveInscription(@Param("usuarioId") Long usuarioId, @Param("eventoId") Long eventoId);
 
+<<<<<<< HEAD
     java.util.List<Inscripcion> findByEventoIdAndEstado(Long eventoId, InscripcionStatus estado);
 
     java.util.List<Inscripcion> findByEvento_FechaAndEvento_EstadoAndEstado(java.time.LocalDate fecha, com.backend.demo.model.enums.EventStatus estado, InscripcionStatus inscripcionStatus);
+=======
+    Optional<Inscripcion> findByQrToken(String qrToken);
+
+    /** Devuelve todos los inscritos de un evento (para reporte). */
+    @Query("""
+            SELECT i FROM Inscripcion i
+            JOIN FETCH i.usuario u
+            WHERE i.evento.id = :eventoId
+            ORDER BY i.createdAt ASC
+            """)
+    List<Inscripcion> findAllByEventoIdForReporte(@Param("eventoId") Long eventoId);
+
+    /** Cuenta asistentes confirmados de un evento. */
+    @Query("""
+            SELECT COUNT(i)
+            FROM Inscripcion i
+            WHERE i.evento.id = :eventoId
+              AND i.asistio   = true
+            """)
+    long countAsistentesByEventoId(@Param("eventoId") Long eventoId);
+>>>>>>> 41d408940bec3ea7dfe1cb34143428d35a21d5f9
 }
