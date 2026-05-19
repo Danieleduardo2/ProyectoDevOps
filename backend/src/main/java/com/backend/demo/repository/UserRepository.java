@@ -49,4 +49,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("rol") com.backend.demo.model.enums.ERole rol,
             Pageable pageable
     );
+
 }
