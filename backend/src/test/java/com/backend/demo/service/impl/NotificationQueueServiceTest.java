@@ -1,12 +1,15 @@
 package com.backend.demo.service.impl;
 
 import com.backend.demo.dto.notification.EmailNotificationRequest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
@@ -28,6 +31,21 @@ class NotificationQueueServiceTest {
 
     @Mock
     private JavaMailSender mailSender;
+
+    @BeforeEach
+    void setUp() {
+        // 1. Inyectamos manualmente la variable que Spring inyectaría con @Value
+        ReflectionTestUtils.setField(notificationQueueService, "mailFrom", "no-reply@example.com");
+        
+        // 2. Iniciamos el worker manualmente (lo que haría @PostConstruct)
+        notificationQueueService.start();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 3. Detenemos el worker de forma limpia (lo que haría @PreDestroy)
+        notificationQueueService.stop();
+    }
 
     @Test
     void shouldEnqueueEmailAndProcessWithoutBlocking() throws Exception {
