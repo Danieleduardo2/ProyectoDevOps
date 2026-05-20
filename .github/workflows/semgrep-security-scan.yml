@@ -1,0 +1,80 @@
+name: Semgrep Security Scan
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  semgrep-scan:
+    name: Analisis de seguridad con Semgrep
+    runs-on: ubuntu-latest
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Ejecutar analisis de seguridad
+        run: |
+          semgrep ci \
+            --config=auto \
+            --include="**/*.java" \
+            --include="**/*.yml" \
+            --include="**/*.properties" \
+            --json-output=semgrep-results.json \
+            --text
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Mostrar resumen de resultados
+        if: always()
+        run: |
+          echo "===== RESUMEN DE ANALISIS SEMGREP ====="
+          echo "Rama: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          if [ -f semgrep-results.json ]; then
+            echo "Reporte generado correctamente"
+          else
+            echo "No se genero reporte"
+          fi
+
+      - name: Subir reporte como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-results.json
+          if-no-files-found: ignore
+
+  semgrep-block:
+    name: Bloquear ante vulnerabilidades criticas en main
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Analisis estricto en main
+        run: |
+          semgrep ci \
+            --config=auto \
+            --severity=ERROR \
+            --include="**/*.java" \
+            --include="**/*.yml" \
+            --include="**/*.properties"
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: false
