@@ -1,10 +1,14 @@
 package com.backend.demo.service.impl;
 
+import com.backend.demo.exception.BadRequestException;
+import com.backend.demo.exception.InvalidTokenException;
+import com.backend.demo.exception.ResourceNotFoundException;
 import com.backend.demo.model.entity.PasswordResetToken;
 import com.backend.demo.repository.PasswordResetTokenRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.service.IPasswordResetService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +17,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PasswordResetServiceImpl implements IPasswordResetService {
 
     private final PasswordResetTokenRepository tokenRepository;
@@ -23,7 +28,7 @@ public class PasswordResetServiceImpl implements IPasswordResetService {
     public void forgotPassword(String email) {
 
         var user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         // tokenRepository.deleteByUser(user);
 
@@ -40,25 +45,24 @@ public class PasswordResetServiceImpl implements IPasswordResetService {
 
         String link = "http://localhost:3000/reset-password?token=" + token;
 
-        //  imprimir en consola
-        System.out.println("=================================");
-        System.out.println(" RESET PASSWORD LINK:");
-        System.out.println(link);
-        System.out.println("=================================");
+        log.info("=================================");
+        log.info(" RESET PASSWORD LINK:");
+        log.info(link);
+        log.info("=================================");
     }
 
     @Override
     public void resetPassword(String token, String newPassword) {
 
         var resetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
+                .orElseThrow(() -> new InvalidTokenException("Token inválido"));
 
         if (resetToken.isUsed()) {
-            throw new RuntimeException("Token ya usado");
+            throw new BadRequestException("Token ya usado");
         }
 
         if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expirado");
+            throw new BadRequestException("Token expirado");
         }
 
         var user = resetToken.getUser();
