@@ -1,0 +1,76 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  build:
+    name: Build y empaquetado
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compilar y empaquetar
+        working-directory: backend
+        run: mvn clean package -DskipTests
+
+      - name: Verificar artefacto generado
+        run: ls -la backend/target/*.jar
+
+  docker:
+    name: Construir imagen Docker
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Empaquetar aplicacion
+        working-directory: backend
+        run: mvn clean package -DskipTests
+
+      - name: Construir imagen Docker
+        working-directory: backend
+        run: docker build -t proyectodevops-backend:latest .
+
+      - name: Verificar imagen creada
+        run: docker images proyectodevops-backend
+
+  deploy-info:
+    name: Informacion de despliegue
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Mostrar informacion del despliegue
+        run: |
+          echo "Pipeline CD ejecutado correctamente"
+          echo "Rama: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Imagen lista para despliegue"
