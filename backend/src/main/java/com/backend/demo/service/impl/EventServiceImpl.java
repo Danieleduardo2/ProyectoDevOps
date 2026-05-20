@@ -11,9 +11,12 @@ import com.backend.demo.model.entity.Event;
 import com.backend.demo.model.entity.User;
 import com.backend.demo.model.enums.EventStatus;
 import com.backend.demo.model.enums.ERole;
+import com.backend.demo.model.enums.InscripcionStatus;
 import com.backend.demo.repository.EventRepository;
+import com.backend.demo.repository.InscripcionRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.security.services.UserInfoDetail;
+import com.backend.demo.service.IEmailNotificationService;
 import com.backend.demo.service.IEventService;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,8 @@ public class EventServiceImpl implements IEventService {
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final InscripcionRepository inscripcionRepository;
+    private final IEmailNotificationService emailNotificationService;
     private final EventMapper eventMapper;
 
     //Crear evento
@@ -101,11 +106,24 @@ public class EventServiceImpl implements IEventService {
 
         validateEventPermission(event, user, "editar");
         validateUpdateRules(request);
+
+        boolean dateChanged = request.getFecha() != null && !request.getFecha().equals(event.getFecha());
+        boolean timeChanged = request.getHora() != null && !request.getHora().equals(event.getHora());
+        boolean locationChanged = request.getUbicacion() != null && !request.getUbicacion().equals(event.getUbicacion());
+
         eventMapper.updateEvent(request, event);
         if (!event.isParkingAvailable()) {
             event.setParkingSpots(0);
         }
-        return eventMapper.toResponse(eventRepository.save(event));
+
+        Event saved = eventRepository.save(event);
+
+        if ((dateChanged || timeChanged || locationChanged)) {
+            var inscripciones = inscripcionRepository.findByEventoIdAndEstado(id, InscripcionStatus.CONFIRMADA);
+            emailNotificationService.sendEventUpdateNotifications(saved, inscripciones);
+        }
+
+        return eventMapper.toResponse(saved);
     }
 
     //Elimina un evento

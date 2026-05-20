@@ -19,6 +19,7 @@ import com.backend.demo.repository.EventRepository;
 import com.backend.demo.repository.InscripcionRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.security.services.UserInfoDetail;
+import com.backend.demo.service.IEmailNotificationService;
 import com.backend.demo.service.IInscripcionService;
 import com.backend.demo.service.QrService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class InscripcionServiceImpl implements IInscripcionService {
     private final InscripcionRepository inscripcionRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final IEmailNotificationService emailNotificationService;
     private final QrService qrService;          // ← nuevo
 
     // ==================== CREAR INSCRIPCIÓN ====================
@@ -80,6 +82,10 @@ public class InscripcionServiceImpl implements IInscripcionService {
         evento.incrementarInscritos();
 
         Inscripcion saved = inscripcionRepository.save(inscripcion);
+
+        // Enviar notificación asíncrona al usuario
+        emailNotificationService.sendInscripcionConfirmation(saved);
+
         return mapToResponse(saved);
     }
 
