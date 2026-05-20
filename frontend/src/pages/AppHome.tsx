@@ -10,6 +10,24 @@ export function AppHome() {
             <h2>Área principal</h2>
             <p>Login exitoso. Aquí irá el contenido del sistema.</p>
 
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0" }}>
+                <button
+                    onClick={() => navigate("/checkin/escanear")}
+                    style={{
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        background: "#7c3aed",
+                        color: "#fff",
+                        textDecoration: "none",
+                        display: "inline-block",
+                        border: "none",
+                        cursor: "pointer",
+                    }}
+                >
+                    Escanear QR
+                </button>
+            </div>
+
             <button
                 onClick={() => {
                     logout();
