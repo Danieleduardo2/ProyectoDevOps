@@ -1,5 +1,6 @@
 package com.backend.demo.bootstrap;
 
+import com.backend.demo.exception.RoleNotFoundException;
 import com.backend.demo.model.entity.Role;
 import com.backend.demo.model.entity.User;
 import com.backend.demo.model.enums.ERole;
@@ -73,8 +74,8 @@ public class DataInitializer implements CommandLineRunner {
                 User newUser = testData.toUserEntity(encodedPassword);
 
                 Role role = roleRepository.findByName(testData.getRole())
-                        .orElseThrow(() -> new RuntimeException(
-                                "Rol no encontrado: " + testData.getRole().name()
+                        .orElseThrow(() -> new RoleNotFoundException(
+                                "Rol no encontrado durante inicialización: " + testData.getRole().name()
                         ));
 
                 newUser.getRoles().add(role);
@@ -86,24 +87,23 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void logCredentials() {
-        log.info("");
-        log.info("================================================");
-        log.info("  USUARIOS DE PRUEBA DISPONIBLES");
-        log.info("================================================");
+        log.debug("");
+        log.debug("================================================");
+        log.debug("  USUARIOS DE PRUEBA DISPONIBLES");
+        log.debug("================================================");
 
         TestDataSeeder[] testUsers = TestDataSeeder.getTestUsers();
         for (TestDataSeeder user : testUsers) {
-            log.info("");
-            log.info("  Email    : {}", user.getEmail());
-            log.info("  Password :");
-            log.info("  Rol      : {}", user.getRole().name());
+            log.debug("");
+            log.debug("  Email    : {}", user.getEmail());
+            log.debug("  Rol      : {}", user.getRole().name());
         }
 
-        log.info("");
-        log.info("================================================");
-        log.info("  Endpoint: POST /api/auth/login");
-        log.info("  Body: {\"email\": \"...\", \"password\": \"...\"}");
-        log.info("================================================");
-        log.info("");
+        log.debug("");
+        log.debug("================================================");
+        log.debug("  Endpoint: POST /api/auth/login");
+        log.debug("  Body: {{\"email\": \"...\", \"password\": \"...\"}}");
+        log.debug("================================================");
+        log.debug("");
     }
 }

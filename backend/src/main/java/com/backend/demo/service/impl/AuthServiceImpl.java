@@ -2,6 +2,9 @@ package com.backend.demo.service.impl;
 
 import com.backend.demo.dto.auth.LoginRequest;
 import com.backend.demo.dto.auth.LoginResponse;
+import com.backend.demo.exception.AccountLockedException;
+import com.backend.demo.exception.BadRequestException;
+import com.backend.demo.exception.ResourceNotFoundException;
 import com.backend.demo.security.jwt.JwtUtil;
 import com.backend.demo.service.IAuthService;
 import com.backend.demo.model.entity.User;
@@ -12,8 +15,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AuthServiceImpl implements IAuthService {
     private final JwtUtil jwtUtil;
@@ -25,11 +30,12 @@ public class AuthServiceImpl implements IAuthService {
     public LoginResponse login(LoginRequest loginRequestDTO) {
 
         User user = userRepository.findByEmail(loginRequestDTO.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Usuario no encontrado con email: " + loginRequestDTO.getEmail()));
 
         // Si está bloqueado
         if (user.isLocked()) {
-            throw new RuntimeException("Usuario bloqueado");
+            throw new AccountLockedException("Cuenta bloqueada por múltiples intentos fallidos");
         }
 
         try {
@@ -62,7 +68,7 @@ public class AuthServiceImpl implements IAuthService {
 
             userRepository.save(user);
 
-            throw new RuntimeException("Credenciales incorrectas");
+            throw new BadRequestException("Credenciales incorrectas. Intentos fallidos: " + attempts + "/" + MAX_FAILED_ATTEMPTS);
         }
     }
 
