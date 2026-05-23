@@ -1,0 +1,9 @@
+rules:
+  - id: check-missing-actuator-health
+    patterns:
+      - pattern-regex: "^management\\.endpoints\\.web\\.exposure\\.include\\s*=\\s*(?!.*health).*$"
+    message: "Error de DevOps: El endpoint de salud obligatorio '/actuator/health' no está expuesto en la propiedad 'management.endpoints.web.exposure.include' de application.properties."
+    languages: [generic]
+    paths:
+      include: ["*application.properties"]
+    severity: ERROR
