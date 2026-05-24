@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build y Test Backend
+    name: Compilacion y pruebas del backend
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,7 @@ jobs:
         working-directory: backend
         run: mvn clean compile -DskipTests
 
-      - name: Ejecutar tests
+      - name: Ejecutar pruebas
         working-directory: backend
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
