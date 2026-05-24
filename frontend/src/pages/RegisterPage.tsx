@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Card } from "primereact/card";
+import { InputText } from "primereact/inputtext";
+import { Password } from "primereact/password";
+import { Button } from "primereact/button";
+
 import { register } from "../api/auth";
 import { getErrorMessage } from "../api/errorMessage";
 
@@ -22,12 +27,9 @@ export function RegisterPage() {
         if (!email.trim()) return "El email es obligatorio.";
         if (!password.trim()) return "La contraseña es obligatoria.";
 
-        // Validación alineada con backend: ^[+]?[0-9]{10}$
-        // (10 dígitos, opcional + al inicio)
         const phoneOk = /^[+]?[0-9]{10}$/.test(telefono.trim());
         if (!phoneOk) return "El teléfono debe contener 10 dígitos (puede iniciar con +).";
 
-        // Validación alineada con backend: password min 8
         if (password.length < 8) return "La contraseña debe tener mínimo 8 caracteres.";
 
         return null;
@@ -53,7 +55,6 @@ export function RegisterPage() {
                 password,
             });
 
-            // Criterio: tras registro, redirige al login
             navigate("/login", { replace: true });
         } catch (err) {
             setError(getErrorMessage(err));
@@ -63,76 +64,103 @@ export function RegisterPage() {
     }
 
     return (
-        <div style={{ maxWidth: 420, margin: "40px auto", fontFamily: "system-ui" }}>
-            <h2>Registro</h2>
-
-            {error && (
-                <div
-                    style={{
-                        background: "#fee",
-                        border: "1px solid #f99",
-                        padding: 12,
-                        marginBottom: 12,
-                    }}
-                >
-                    {error}
+        <div className="auth-page">
+            <div className="auth-bg" />
+            <Card className="auth-card auth-card-register">
+                <div className="auth-header">
+                    <div className="auth-badge">Registro</div>
+                    <h2>Crear cuenta</h2>
+                    <p>Regístrate para acceder al Sistema de Gestión de Eventos.</p>
                 </div>
-            )}
 
-            <form onSubmit={onSubmit}>
-                <label>Nombre</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="text"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Tu nombre"
-                />
+                {error && (
+                    <div className="auth-alert auth-alert-error">
+                        <i className="pi pi-exclamation-circle" />
+                        <span>{error}</span>
+                    </div>
+                )}
 
-                <label>Apellido</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="text"
-                    value={apellido}
-                    onChange={(e) => setApellido(e.target.value)}
-                    placeholder="Tu apellido"
-                />
+                <form onSubmit={onSubmit} className="auth-form">
+                    <div className="auth-grid">
+                        <div className="field">
+                            <label htmlFor="nombre">Nombre</label>
+                            <InputText
+                                id="nombre"
+                                value={nombre}
+                                onChange={(e) => setNombre(e.target.value)}
+                                placeholder="Tu nombre"
+                                className="w-full auth-input"
+                            />
+                        </div>
 
-                <label>Teléfono</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="tel"
-                    value={telefono}
-                    onChange={(e) => setTelefono(e.target.value)}
-                    placeholder="Ej: 3001234567"
-                />
+                        <div className="field">
+                            <label htmlFor="apellido">Apellido</label>
+                            <InputText
+                                id="apellido"
+                                value={apellido}
+                                onChange={(e) => setApellido(e.target.value)}
+                                placeholder="Tu apellido"
+                                className="w-full auth-input"
+                            />
+                        </div>
+                    </div>
 
-                <label>Email</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="correo@dominio.com"
-                />
+                    <div className="field">
+                        <label htmlFor="telefono">Teléfono</label>
+                        <InputText
+                            id="telefono"
+                            type="tel"
+                            value={telefono}
+                            onChange={(e) => setTelefono(e.target.value)}
+                            placeholder="Ej: 3001234567"
+                            className="w-full auth-input"
+                        />
+                    </div>
 
-                <label>Contraseña</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 8 caracteres"
-                />
+                    <div className="field">
+                        <label htmlFor="email">Email</label>
+                        <InputText
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="correo@dominio.com"
+                            className="w-full auth-input"
+                        />
+                    </div>
 
-                <button disabled={loading} style={{ width: "100%", padding: 10 }}>
-                    {loading ? "Registrando..." : "Crear cuenta"}
-                </button>
-            </form>
+                    <div className="field">
+                        <label htmlFor="password">Contraseña</label>
+                        <div className="auth-password">
+                            <Password
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Mínimo 8 caracteres"
+                                feedback={false}
+                                toggleMask
+                                className="w-full"
+                                inputClassName="w-full auth-input"
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+                    </div>
 
-            <div style={{ marginTop: 12 }}>
-                ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
-            </div>
+                    <Button
+                        type="submit"
+                        label={loading ? "Registrando..." : "Crear cuenta"}
+                        icon="pi pi-user-plus"
+                        className="w-full auth-button"
+                        loading={loading}
+                    />
+                </form>
+
+                <div className="auth-links">
+                    <span>
+                        ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
+                    </span>
+                </div>
+            </Card>
         </div>
     );
 }

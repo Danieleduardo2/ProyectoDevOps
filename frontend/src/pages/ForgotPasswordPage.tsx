@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Card } from "primereact/card";
+import { InputText } from "primereact/inputtext";
+import { Button } from "primereact/button";
+
 import { forgotPassword } from "../api/auth";
 import { getErrorMessage } from "../api/errorMessage";
 
@@ -32,39 +36,55 @@ export function ForgotPasswordPage() {
     }
 
     return (
-        <div style={{ maxWidth: 420, margin: "40px auto", fontFamily: "system-ui" }}>
-            <h2>Recuperar contraseña</h2>
-
-            {error && (
-                <div style={{ background: "#fee", border: "1px solid #f99", padding: 12, marginBottom: 12 }}>
-                    {error}
+        <div className="auth-page">
+            <div className="auth-bg" />
+            <Card className="auth-card">
+                <div className="auth-header">
+                    <div className="auth-badge">Recuperación</div>
+                    <h2>Recuperar contraseña</h2>
+                    <p>Ingresa tu correo para recibir ayuda con el acceso.</p>
                 </div>
-            )}
 
-            {success && (
-                <div style={{ background: "#efe", border: "1px solid #9f9", padding: 12, marginBottom: 12 }}>
-                    {success}
+                {error && (
+                    <div className="auth-alert auth-alert-error">
+                        <i className="pi pi-exclamation-circle" />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                {success && (
+                    <div className="auth-alert auth-alert-success">
+                        <i className="pi pi-check-circle" />
+                        <span>{success}</span>
+                    </div>
+                )}
+
+                <form onSubmit={onSubmit} className="auth-form">
+                    <div className="field">
+                        <label htmlFor="email">Email</label>
+                        <InputText
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="correo@dominio.com"
+                            className="w-full auth-input"
+                        />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        label={loading ? "Enviando..." : "Enviar instrucciones"}
+                        icon="pi pi-envelope"
+                        className="w-full auth-button"
+                        loading={loading}
+                    />
+                </form>
+
+                <div className="auth-links">
+                    <Link to="/login">Volver al login</Link>
                 </div>
-            )}
-
-            <form onSubmit={onSubmit}>
-                <label>Email</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="correo@dominio.com"
-                />
-
-                <button disabled={loading} style={{ width: "100%", padding: 10 }}>
-                    {loading ? "Enviando..." : "Enviar"}
-                </button>
-            </form>
-
-            <div style={{ marginTop: 12 }}>
-                <Link to="/login">Volver al login</Link>
-            </div>
+            </Card>
         </div>
     );
 }

@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Card } from "primereact/card";
+import { InputText } from "primereact/inputtext";
+import { Password } from "primereact/password";
+import { Button } from "primereact/button";
+
 import { login } from "../api/auth";
 import { getErrorMessage } from "../api/errorMessage";
 import { useAuth } from "../auth/AuthContext";
@@ -18,7 +23,6 @@ export function LoginPage() {
         e.preventDefault();
         setError(null);
 
-        // Validación de vacíos (requerida por el US)
         if (!email.trim() || !password.trim()) {
             setError("Email y contraseña son obligatorios.");
             return;
@@ -27,7 +31,7 @@ export function LoginPage() {
         try {
             setLoading(true);
             const res = await login({ email: email.trim(), password });
-            loginWithToken(res.token); // si backend usa accessToken, cambiamos aquí
+            loginWithToken(res.token);
             navigate("/app", { replace: true });
         } catch (err) {
             setError(getErrorMessage(err));
@@ -37,45 +41,68 @@ export function LoginPage() {
     }
 
     return (
-        <div style={{ maxWidth: 420, margin: "40px auto", fontFamily: "system-ui" }}>
-            <h2>Iniciar sesión</h2>
-
-            {error && (
-                <div style={{ background: "#fee", border: "1px solid #f99", padding: 12, marginBottom: 12 }}>
-                    {error}
+        <div className="auth-page">
+            <div className="auth-bg" />
+            <Card className="auth-card">
+                <div className="auth-header">
+                    <div className="auth-badge">Acceso</div>
+                    <h2>Sistema de Gestión de Eventos</h2>
+                    <p>Ingresa con tu cuenta para continuar.</p>
                 </div>
-            )}
 
-            <form onSubmit={onSubmit}>
-                <label>Email</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="correo@dominio.com"
-                />
+                {error && (
+                    <div className="auth-alert auth-alert-error">
+                        <i className="pi pi-exclamation-circle" />
+                        <span>{error}</span>
+                    </div>
+                )}
 
-                <label>Contraseña</label>
-                <input
-                    style={{ width: "100%", padding: 10, margin: "6px 0 12px" }}
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="********"
-                />
+                <form onSubmit={onSubmit} className="auth-form">
+                    <div className="field">
+                        <label htmlFor="email">Email</label>
+                        <InputText
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="correo@dominio.com"
+                            className="w-full auth-input"
+                        />
+                    </div>
 
-                <button disabled={loading} style={{ width: "100%", padding: 10 }}>
-                    {loading ? "Ingresando..." : "Ingresar"}
-                </button>
-            </form>
+                    <div className="field">
+                        <label htmlFor="password">Contraseña</label>
+                        <div className="auth-password">
+                            <Password
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="********"
+                                feedback={false}
+                                toggleMask
+                                className="w-full"
+                                inputClassName="w-full auth-input"
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+                    </div>
 
-            <div style={{ marginTop: 12 }}>
-                <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
-            </div>
-            <div style={{ marginTop: 8 }}>
-                ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
-            </div>
+                    <Button
+                        type="submit"
+                        label={loading ? "Ingresando..." : "Ingresar"}
+                        icon="pi pi-sign-in"
+                        className="w-full auth-button"
+                        loading={loading}
+                    />
+                </form>
+
+                <div className="auth-links">
+                    <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+                    <span>
+                        ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+                    </span>
+                </div>
+            </Card>
         </div>
     );
 }
