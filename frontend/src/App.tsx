@@ -1,16 +1,19 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { AppHome } from "./pages/AppHome";
+import { EventDetailPage } from "./pages/EventDetailPage";
+import { EventListPage } from "./pages/EventListPage";
+import { EventAttendanceReportPage } from "./pages/EventAttendanceReportPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { useAuth } from "./auth/AuthContext";
-import { UsersAdminPage } from "./pages/UsersAdminPage";
-import { UserActionsPage } from "./pages/UserActionsPage";
-import { RequireAdmin } from "./auth/RequireAdmin";
 import { QrCheckinScannerPage } from "./pages/QrCheckinScannerPage";
 import { QrCheckinResultPage } from "./pages/QrCheckinResultPage";
-import { EventAttendanceReportPage } from "./pages/EventAttendanceReportPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { useAuth } from "./auth/AuthContext";
+import { UserActionsPage } from "./pages/UserActionsPage";
+import { UsersAdminPage } from "./pages/UsersAdminPage";
+import { RequireAdmin } from "./auth/RequireAdmin";
 
 export default function App() {
     const { isAuthenticated } = useAuth();
@@ -29,6 +32,8 @@ export default function App() {
             {/* Rutas protegidas (login) */}
             <Route element={<ProtectedRoute />}>
                 <Route path="/app" element={<AppHome />} />
+                <Route path="/events" element={<EventListPage />} />
+                <Route path="/events/:eventoId" element={<EventDetailPage />} />
 
                 {/* Rutas del check-in / Reporte */}
                 <Route path="/checkin/escanear/:eventoId" element={<QrCheckinScannerPage />} />
@@ -41,6 +46,8 @@ export default function App() {
                     <Route path="/admin/actions" element={<UserActionsPage />} />
                 </Route>
             </Route>
+
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

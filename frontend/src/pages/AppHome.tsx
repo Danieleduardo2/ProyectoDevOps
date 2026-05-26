@@ -7,24 +7,27 @@ export function AppHome() {
 
     return (
         <div style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
-            <h2>Área principal</h2>
-            <p>Login exitoso. Aquí irá el contenido del sistema.</p>
+            <h2>Bienvenido al sistema de eventos</h2>
+            <p>Selecciona una acción para comenzar.</p>
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "20px 0" }}>
+            <div style={{ display: "grid", gap: 16, margin: "24px 0" }}>
                 <button
-                    onClick={() => navigate("/checkin/escanear")}
-                    style={{
-                        padding: "10px 16px",
-                        borderRadius: 8,
-                        background: "#7c3aed",
-                        color: "#fff",
-                        textDecoration: "none",
-                        display: "inline-block",
-                        border: "none",
-                        cursor: "pointer",
-                    }}
+                    onClick={() => navigate("/events")}
+                    style={buttonStyle}
                 >
-                    Escanear QR
+                    Ver eventos
+                </button>
+                <button
+                    onClick={() => navigate("/admin/users")}
+                    style={buttonStyle}
+                >
+                    Administración de usuarios
+                </button>
+                <button
+                    onClick={() => navigate("/admin/actions")}
+                    style={buttonStyle}
+                >
+                    Historial de acciones
                 </button>
             </div>
 
@@ -33,9 +36,21 @@ export function AppHome() {
                     logout();
                     navigate("/login", { replace: true });
                 }}
+                style={{ ...buttonStyle, background: "#ef4444" }}
             >
                 Cerrar sesión
             </button>
         </div>
     );
 }
+
+const buttonStyle: React.CSSProperties = {
+    padding: "14px 18px",
+    borderRadius: 10,
+    border: "none",
+    cursor: "pointer",
+    background: "#7c3aed",
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "left",
+};

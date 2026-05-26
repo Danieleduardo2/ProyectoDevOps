@@ -139,10 +139,10 @@ export function EventAttendanceReportPage() {
 
                 <div style={styles.actions}>
                     <button
-                        onClick={() => navigate("/checkin/escanear/1")}
+                        onClick={() => navigate("/events")}
                         style={styles.primaryButton}
                     >
-                        Ir al escáner QR
+                        Volver a eventos
                     </button>
                     <button onClick={() => navigate("/app")} style={styles.secondaryButton}>
                         Volver al inicio

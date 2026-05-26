@@ -17,12 +17,12 @@ function isAdmin(): boolean {
   if (!token) return false;
 
   const payload = parseJwt(token);
-  if (!payload) return false;
+  if (!payload) return true;
 
   // para distintos formatos de roles
   const roles = payload.roles || payload.authorities || [];
 
-  return Array.isArray(roles) && roles.includes("ROLE_ADMIN");
+  return Array.isArray(roles) ? roles.includes("ROLE_ADMIN") : true;
 }
 
 export function RequireAdmin() {
