@@ -1,7 +1,14 @@
 import { http } from "./http";
 
 export type LoginRequest = { email: string; password: string };
-export type LoginResponse = { token: string };
+export type LoginResponse = {
+    token: string;
+    id: number;
+    email: string;
+    nombre: string;
+    apellido: string;
+    roles: string[];
+};
 
 export type RegisterRequest = {
     nombre: string;

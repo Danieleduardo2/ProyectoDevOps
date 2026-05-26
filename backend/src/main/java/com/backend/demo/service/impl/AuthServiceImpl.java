@@ -7,6 +7,7 @@ import com.backend.demo.exception.BadRequestException;
 import com.backend.demo.exception.ResourceNotFoundException;
 import com.backend.demo.security.jwt.JwtUtil;
 import com.backend.demo.service.IAuthService;
+import com.backend.demo.model.entity.Role;
 import com.backend.demo.model.entity.User;
 import com.backend.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -53,7 +57,19 @@ public class AuthServiceImpl implements IAuthService {
 
             String token = jwtUtil.generateToken(authentication.getName());
 
-            return new LoginResponse(token);
+            Set<String> roles = user.getRoles().stream()
+                    .map(Role::getName)
+                    .map(Enum::name)
+                    .collect(Collectors.toSet());
+
+            return new LoginResponse(
+                    token,
+                    user.getId(),
+                    user.getEmail(),
+                    user.getNombre(),
+                    user.getApellido(),
+                    roles
+            );
 
         } catch (Exception e) {
 

@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEvents, registerToEvent, type Event, type EventStatus, type PageResponse } from "../api/eventos";
 import { getErrorMessage } from "../api/errorMessage";
+import { useAuth } from "../auth/AuthContext";
 
 const eventStatuses: EventStatus[] = ["DRAFT", "PUBLISHED", "CLOSED", "CANCELLED"];
 
 export function EventListPage() {
     const navigate = useNavigate();
+    const { isAdmin } = useAuth();
     const [page, setPage] = useState(0);
     const [size, setSize] = useState(10);
     const [nombre, setNombre] = useState("");
@@ -47,8 +49,6 @@ export function EventListPage() {
         await load(0);
     }
 
-    const items = useMemo(() => data?.content ?? [], [data]);
-
     async function onRegister(eventoId: number) {
         setError(null);
         setSuccess(null);
@@ -56,7 +56,7 @@ export function EventListPage() {
 
         try {
             await registerToEvent(eventoId);
-            setSuccess("Inscripción realizada correctamente.");
+            setSuccess("Inscripción realizada. Revisa tu correo para recibir el QR de invitación.");
             await load();
         } catch (err) {
             setError(getErrorMessage(err));
@@ -66,155 +66,102 @@ export function EventListPage() {
     }
 
     return (
-        <div style={{ maxWidth: 1120, margin: "30px auto", fontFamily: "system-ui", padding: 16 }}>
-            <h2>Eventos disponibles</h2>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
+        <div className="page-shell">
+            <header className="page-header card-panel">
                 <div>
-                    <label>Buscar por nombre</label>
-                    <input
-                        value={nombre}
-                        onChange={(e) => setNombre(e.target.value)}
-                        placeholder="Nombre del evento"
-                        style={{ width: "100%", padding: 10, marginTop: 6 }}
-                    />
+                    <span className="badge">Explorar</span>
+                    <h1>Eventos disponibles</h1>
+                    <p>Revisa los próximos eventos, su estado y regístrate para recibir tu invitación con QR.</p>
                 </div>
-                <div>
+                <div className="page-actions">
+                    <button className="secondary-button" onClick={() => navigate("/app")}>Inicio</button>
+                    <button className="secondary-button" onClick={() => navigate("/user")}>Mi perfil</button>
+                    {isAdmin && <button className="secondary-button" onClick={() => navigate("/admin")}>Admin</button>}
+                </div>
+            </header>
+
+            <section className="filter-panel card-panel card-panel-alt">
+                <div className="filter-group">
+                    <label>Buscar por nombre</label>
+                    <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre del evento" />
+                </div>
+                <div className="filter-group">
                     <label>Filtrar por estado</label>
-                    <select
-                        value={estado}
-                        onChange={(e) => setEstado(e.target.value as EventStatus | "")}
-                        style={{ width: "100%", padding: 10, marginTop: 6 }}
-                    >
+                    <select value={estado} onChange={(e) => setEstado(e.target.value as EventStatus | "")}> 
                         <option value="">Todos</option>
                         {eventStatuses.map((estadoItem) => (
-                            <option key={estadoItem} value={estadoItem}>
-                                {estadoItem}
-                            </option>
+                            <option key={estadoItem} value={estadoItem}>{estadoItem}</option>
                         ))}
                     </select>
                 </div>
-                <div style={{ display: "flex", alignItems: "flex-end" }}>
-                    <button onClick={applyFilters} style={{ width: "100%", padding: 12 }}>
-                        Aplicar filtros
-                    </button>
+                <div className="filter-group filter-group-action">
+                    <button className="primary-button" onClick={applyFilters}>Aplicar filtros</button>
                 </div>
-            </div>
+            </section>
 
-            {error && (
-                <div style={{ marginBottom: 16, background: "#fee", border: "1px solid #f99", padding: 12 }}>
-                    {error}
-                </div>
-            )}
-            {success && (
-                <div style={{ marginBottom: 16, background: "#efe", border: "1px solid #9f9", padding: 12 }}>
-                    {success}
-                </div>
-            )}
+            {error && <div className="alert error">{error}</div>}
+            {success && <div className="alert success">{success}</div>}
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
-                <button onClick={() => navigate("/app")} style={{ padding: "10px 16px" }}>
-                    Volver al inicio
-                </button>
-                <button onClick={() => navigate("/admin/users")} style={{ padding: "10px 16px" }}>
-                    Ir a administración
-                </button>
-            </div>
+            <section className="event-grid">
+                {loading ? (
+                    <div className="loading-card">Cargando eventos...</div>
+                ) : data?.content.length ? (
+                    data.content.map((evento) => (
+                        <article key={evento.id} className="event-card">
+                            <div className="event-card-header">
+                                <div>
+                                    <span className="event-badge">{evento.estado}</span>
+                                    <h2>{evento.nombre}</h2>
+                                </div>
+                                <div className="event-meta">{evento.fecha} · {evento.hora}</div>
+                            </div>
+                            <p className="event-description">{evento.descripcion || "Sin descripción disponible."}</p>
+                            <div className="event-tags">
+                                <span className="chip">{evento.ubicacion}</span>
+                                <span className="chip">Cupos: {evento.capacidadMaxima ?? "-"}</span>
+                                <span className="chip">Parking: {evento.parkingAvailable ? `Sí (${evento.parkingSpots ?? 0})` : "No"}</span>
+                            </div>
+                            <div className="event-actions">
+                                <button className="ghost-button" onClick={() => navigate(`/events/${evento.id}`)}>Ver</button>
+                                <button
+                                    className="primary-button"
+                                    disabled={evento.estado !== "PUBLISHED" || registeringId === evento.id}
+                                    onClick={() => onRegister(evento.id)}
+                                >
+                                    {evento.estado !== "PUBLISHED" ? "No disponible" : registeringId === evento.id ? "Inscribiendo..." : "Inscribirse"}
+                                </button>
+                            </div>
+                            <div className="event-actions secondary">
+                                <button className="ghost-button" onClick={() => navigate(`/checkin/escanear/${evento.id}`)}>Escáner</button>
+                                <button className="ghost-button" onClick={() => navigate(`/eventos/${evento.id}/reporte`)}>Reporte</button>
+                            </div>
+                        </article>
+                    ))
+                ) : (
+                    <div className="empty-state">No se encontraron eventos con los filtros seleccionados.</div>
+                )}
+            </section>
 
-            <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 16, background: "#fff" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
-                    <thead>
-                        <tr>
-                            {[
-                                "ID",
-                                "Nombre",
-                                "Fecha",
-                                "Hora",
-                                "Ubicación",
-                                "Estado",
-                                "Cupos",
-                                "Parking",
-                                "Acciones",
-                            ].map((head) => (
-                                <th key={head} style={{ textAlign: "left", padding: 14, background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                                    {head}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan={9} style={{ padding: 16 }}>
-                                    Cargando eventos...
-                                </td>
-                            </tr>
-                        ) : items.length === 0 ? (
-                            <tr>
-                                <td colSpan={9} style={{ padding: 16 }}>
-                                    No se encontraron eventos.
-                                </td>
-                            </tr>
-                        ) : (
-                            items.map((evento) => (
-                                <tr key={evento.id}>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>{evento.id}</td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>{evento.nombre}</td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>{evento.fecha}</td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>{evento.hora}</td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>{evento.ubicacion}</td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>{evento.estado}</td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>
-                                        {evento.capacidadMaxima ?? "-"}
-                                    </td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9" }}>
-                                        {evento.parkingAvailable ? `Sí (${evento.parkingSpots ?? 0})` : "No"}
-                                    </td>
-                                    <td style={{ padding: 12, borderBottom: "1px solid #f1f5f9", display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                        <button onClick={() => navigate(`/events/${evento.id}`)} style={{ padding: "8px 12px" }}>
-                                            Ver
-                                        </button>
-                                        <button onClick={() => onRegister(evento.id)} disabled={evento.estado !== "PUBLISHED" || registeringId === evento.id} style={{ padding: "8px 12px" }}>
-                                            {evento.estado !== "PUBLISHED" ? "No disponible" : registeringId === evento.id ? "Inscribiendo..." : "Inscribirse"}
-                                        </button>
-                                        <button onClick={() => navigate(`/checkin/escanear/${evento.id}`)} style={{ padding: "8px 12px" }}>
-                                            Escáner
-                                        </button>
-                                        <button onClick={() => navigate(`/eventos/${evento.id}/reporte`)} style={{ padding: "8px 12px" }}>
-                                            Reporte
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 16, flexWrap: "wrap" }}>
-                <button disabled={loading || page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))} style={{ padding: "10px 16px" }}>
+            <footer className="pagination-panel card-panel card-panel-alt">
+                <button className="ghost-button" disabled={loading || page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}>
                     Anterior
                 </button>
-                <span>
+                <div className="pagination-summary">
                     Página <strong>{page + 1}</strong> de <strong>{data?.totalPages ?? 1}</strong>
-                </span>
-                <button
-                    disabled={loading || !data || page + 1 >= data.totalPages}
-                    onClick={() => setPage((current) => current + 1)}
-                    style={{ padding: "10px 16px" }}
-                >
+                </div>
+                <button className="ghost-button" disabled={loading || !data || page + 1 >= data.totalPages} onClick={() => setPage((current) => current + 1)}>
                     Siguiente
                 </button>
-                <label style={{ marginLeft: "auto" }}>
-                    Mostrar
-                    <select value={size} onChange={(e) => setSize(Number(e.target.value))} style={{ marginLeft: 8, padding: 8 }}>
+                <div className="page-size">
+                    <label>Mostrar</label>
+                    <select value={size} onChange={(e) => setSize(Number(e.target.value))}>
                         <option value={5}>5</option>
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                     </select>
                     eventos
-                </label>
-            </div>
+                </div>
+            </footer>
         </div>
     );
 }

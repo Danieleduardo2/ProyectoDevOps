@@ -3,54 +3,61 @@ import { useAuth } from "../auth/AuthContext";
 
 export function AppHome() {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user, isAdmin } = useAuth();
 
     return (
-        <div style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
-            <h2>Bienvenido al sistema de eventos</h2>
-            <p>Selecciona una acción para comenzar.</p>
+        <div className="page-shell">
+            <section className="page-header card-panel">
+                <div>
+                    <span className="badge">Bienvenida</span>
+                    <h1>Bienvenido{user ? `, ${user.nombre}` : ""}</h1>
+                    <p>Accede a tus eventos, gestiona tu cuenta y navega por las funciones administrativas si tienes permisos.</p>
+                </div>
+                <div className="page-actions">
+                    <button className="ghost-button" onClick={() => navigate("/events")}>
+                        Ver eventos
+                    </button>
+                    <button className="secondary-button" onClick={() => navigate("/user")}>
+                        Mi perfil
+                    </button>
+                </div>
+            </section>
 
-            <div style={{ display: "grid", gap: 16, margin: "24px 0" }}>
-                <button
-                    onClick={() => navigate("/events")}
-                    style={buttonStyle}
-                >
-                    Ver eventos
-                </button>
-                <button
-                    onClick={() => navigate("/admin/users")}
-                    style={buttonStyle}
-                >
-                    Administración de usuarios
-                </button>
-                <button
-                    onClick={() => navigate("/admin/actions")}
-                    style={buttonStyle}
-                >
-                    Historial de acciones
-                </button>
-            </div>
+            <section className="grid-cards">
+                <article className="module-card">
+                    <h2>Explorar eventos</h2>
+                    <p>Encuentra eventos recientes, revisa estados y regístrate con un solo clic.</p>
+                    <button className="primary-button" onClick={() => navigate("/events")}>Ir a eventos</button>
+                </article>
 
-            <button
-                onClick={() => {
-                    logout();
-                    navigate("/login", { replace: true });
-                }}
-                style={{ ...buttonStyle, background: "#ef4444" }}
-            >
-                Cerrar sesión
-            </button>
+                <article className="module-card">
+                    <h2>Mi módulo de usuario</h2>
+                    <p>Revisa tus inscripciones, tu perfil y los eventos que tienes pendientes.</p>
+                    <button className="primary-button" onClick={() => navigate("/user")}>Mi usuario</button>
+                </article>
+
+                <article className="module-card">
+                    <h2>Administración</h2>
+                    <p>{isAdmin ? "Gestiona usuarios y revisa acciones del sistema." : "Acceso restringido para administradores."}</p>
+                    <button
+                        className="primary-button"
+                        onClick={() => navigate("/admin")}
+                        disabled={!isAdmin}
+                    >
+                        Ir al admin
+                    </button>
+                </article>
+            </section>
+
+            <section className="card-panel card-panel-alt">
+                <div>
+                    <h3>Estado</h3>
+                    <p>Tu correo es <strong>{user?.email ?? "-"}</strong> y tienes {user?.roles?.join(", ") ?? "sin roles registrados"}.</p>
+                </div>
+                <button className="secondary-button" onClick={() => { logout(); navigate("/login", { replace: true }); }}>
+                    Cerrar sesión
+                </button>
+            </section>
         </div>
     );
 }
-
-const buttonStyle: React.CSSProperties = {
-    padding: "14px 18px",
-    borderRadius: 10,
-    border: "none",
-    cursor: "pointer",
-    background: "#7c3aed",
-    color: "#fff",
-    fontSize: 16,
-    textAlign: "left",
-};

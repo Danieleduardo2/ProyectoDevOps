@@ -17,6 +17,8 @@ public interface IUserService {
 
     Page<UserResponse> getAllUsers(String nombre, String apellido, Pageable pageable);
 
+    UserResponse getCurrentUser();
+
     UserResponse getUserById(Long id);
 
     void deleteUser(Long id);

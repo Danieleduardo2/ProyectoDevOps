@@ -10,6 +10,8 @@ import { QrCheckinScannerPage } from "./pages/QrCheckinScannerPage";
 import { QrCheckinResultPage } from "./pages/QrCheckinResultPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { UserProfilePage } from "./pages/UserProfilePage";
+import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { useAuth } from "./auth/AuthContext";
 import { UserActionsPage } from "./pages/UserActionsPage";
 import { UsersAdminPage } from "./pages/UsersAdminPage";
@@ -32,6 +34,7 @@ export default function App() {
             {/* Rutas protegidas (login) */}
             <Route element={<ProtectedRoute />}>
                 <Route path="/app" element={<AppHome />} />
+                <Route path="/user" element={<UserProfilePage />} />
                 <Route path="/events" element={<EventListPage />} />
                 <Route path="/events/:eventoId" element={<EventDetailPage />} />
 
@@ -42,6 +45,7 @@ export default function App() {
 
                 {/* SOLO ADMIN */}
                 <Route element={<RequireAdmin />}>
+                    <Route path="/admin" element={<AdminDashboardPage />} />
                     <Route path="/admin/users" element={<UsersAdminPage />} />
                     <Route path="/admin/actions" element={<UserActionsPage />} />
                 </Route>

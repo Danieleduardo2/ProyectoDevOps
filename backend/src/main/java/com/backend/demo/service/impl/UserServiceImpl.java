@@ -10,10 +10,13 @@ import com.backend.demo.model.entity.User;
 import com.backend.demo.repository.RoleRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.repository.UserActionRepository;
+import com.backend.demo.security.services.UserInfoDetail;
 import com.backend.demo.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +65,18 @@ public class UserServiceImpl implements IUserService {
     public Page<UserResponse> getAllUsers(String nombre, String apellido, Pageable pageable) {
         return userRepository.findByFilters(nombre, apellido, pageable)
                 .map(userMapper::toResponse);
+    }
+
+    // USUARIO AUTENTICADO
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserInfoDetail user)) {
+            throw new RuntimeException("Usuario no autenticado");
+        }
+
+        return userMapper.toResponse(findUserById(user.getId()));
     }
 
     // BUSCAR POR ID

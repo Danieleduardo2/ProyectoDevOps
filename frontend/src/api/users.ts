@@ -46,6 +46,11 @@ export async function getUsers(params: {
   return data;
 }
 
+export async function getCurrentUser(): Promise<User> {
+  const { data } = await http.get<User>("/api/users/me");
+  return data;
+}
+
 export async function createUser(req: RegisterUserRequest): Promise<User> {
   const { data } = await http.post<User>("/api/users/register", req);
   return data;

@@ -58,6 +58,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers(nombre, rol != null ? rol.name() : null, pageable));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        return ResponseEntity.ok(userService.getCurrentUser());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
