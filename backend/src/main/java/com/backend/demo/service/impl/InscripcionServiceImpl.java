@@ -134,7 +134,7 @@ public class InscripcionServiceImpl implements IInscripcionService {
         inscripcion.setCheckinAt(LocalDateTime.now());
         inscripcion.setEstado(InscripcionStatus.ASISTIDA);
         inscripcionRepository.save(inscripcion);
-
+        emailNotificationService.sendCheckinConfirmation(inscripcion);
         User usuario = inscripcion.getUsuario();
         Event evento = inscripcion.getEvento();
 

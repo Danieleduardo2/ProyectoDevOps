@@ -67,18 +67,36 @@ public class NotificationQueueService {
         log.info("Worker started email to {}", request.getTo());
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, request.getQrCodeBytes() != null, StandardCharsets.UTF_8.name());
+            MimeMessageHelper helper = new MimeMessageHelper(
+                    message,
+                    request.getQrCodeBytes() != null,
+                    StandardCharsets.UTF_8.name()
+            );
             helper.setFrom(mailFrom);
             helper.setTo(request.getTo());
             helper.setSubject(request.getSubject());
             helper.setText(request.getHtmlBody(), true);
+
             if (request.getQrCodeBytes() != null) {
-                helper.addInline(request.getQrContentId(), new ByteArrayResource(request.getQrCodeBytes()), "image/png");
+                helper.addInline(
+                        request.getQrContentId(),
+                        new ByteArrayResource(request.getQrCodeBytes()),
+                        "image/png"
+                );
             }
+
             mailSender.send(message);
-            log.info("Worker finished email to {}", request.getTo());
+            log.info(" Email enviado exitosamente a {}", request.getTo());
+
+        } catch (org.springframework.mail.MailSendException mse) {
+            // Captura errores SMTP específicos con más detalle
+            log.error("MailSendException enviando a {}: {}", request.getTo(), mse.getMessage());
+            if (mse.getFailedMessages() != null) {
+                mse.getFailedMessages().forEach((msg, ex) ->
+                        log.error("  → Fallo en mensaje: {}", ex.getMessage()));
+            }
         } catch (Exception ex) {
-            log.error("Fallo al enviar correo a {}", request.getTo(), ex);
+            log.error("Error enviando correo a {}: {}", request.getTo(), ex.getMessage(), ex);
         }
     }
 

@@ -14,5 +14,6 @@ public class EmailNotificationRequest {
     private String subject;
     private String htmlBody;
     private byte[] qrCodeBytes;
+    @Builder.Default
     private String qrContentId = "qrCode";
 }
