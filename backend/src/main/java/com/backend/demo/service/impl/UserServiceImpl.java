@@ -7,6 +7,7 @@ import com.backend.demo.exception.ResourceNotFoundException;
 import com.backend.demo.mapper.UserMapper;
 import com.backend.demo.model.entity.Role;
 import com.backend.demo.model.entity.User;
+import com.backend.demo.model.enums.ERole;
 import com.backend.demo.repository.RoleRepository;
 import com.backend.demo.repository.UserRepository;
 import com.backend.demo.repository.UserActionRepository;
@@ -54,9 +55,16 @@ public class UserServiceImpl implements IUserService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setActivo(true);
-        user.setFechaCreacion(LocalDateTime.now());
 
-        return userMapper.toResponse(userRepository.save(user));
+
+        Role roleUser = roleRepository.findByName(ERole.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("ROLE_USER no existe"));
+
+        user.getRoles().add(roleUser);
+
+        User saved = userRepository.save(user);
+
+        return userMapper.toResponse(saved);
     }
 
     // LISTAR
