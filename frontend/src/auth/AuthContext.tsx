@@ -19,26 +19,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUserState] = useState<StoredAuthUser | null>(() => getUser());
     const [isUserLoaded, setIsUserLoaded] = useState<boolean>(false);
 
-    useEffect(() => {
-        if (token && !user && !isUserLoaded) {
-            getCurrentUser()
-                .then((currentUser) => {
-                    setUser(currentUser);
-                    setUserState(currentUser);
-                })
-                .catch(() => {
-                    clearToken();
-                    clearUser();
-                    setTokenState(null);
-                    setUserState(null);
-                })
-                .finally(() => {
-                    setIsUserLoaded(true);
-                });
-        } else {
+   useEffect(() => {
+    if (!token) {
+        setIsUserLoaded(true);
+        return;
+    }
+
+    getCurrentUser()
+        .then((currentUser) => {
+            setUser(currentUser);
+            setUserState(currentUser);
+        })
+        .catch(() => {
+            clearToken();
+            clearUser();
+            setTokenState(null);
+            setUserState(null);
+        })
+        .finally(() => {
             setIsUserLoaded(true);
-        }
-    }, [token, user, isUserLoaded]);
+        });
+}, [token]);
 
     const value = useMemo<AuthContextValue>(() => {
         return {
