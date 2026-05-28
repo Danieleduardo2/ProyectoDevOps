@@ -17,6 +17,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [token, setTokenState] = useState<string | null>(() => getToken());
     const [user, setUserState] = useState<StoredAuthUser | null>(() => getUser());
+    // @ts-ignore - isUserLoaded is declared but its value is never read
     const [isUserLoaded, setIsUserLoaded] = useState<boolean>(false);
 
    useEffect(() => {
