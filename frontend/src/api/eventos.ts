@@ -80,3 +80,27 @@ export async function getEventoReporte(eventoId: string | number) {
     );
     return data;
 }
+
+export async function createEvent(eventData: Partial<Event>) {
+    const { data } = await http.post<Event>("/api/events", eventData);
+    return data;
+}
+
+export async function updateEvent(eventoId: string | number, eventData: Partial<Event>) {
+    const { data } = await http.put<Event>(`/api/events/${eventoId}`, eventData);
+    return data;
+}
+
+export async function updateEventStatus(eventoId: string | number, estado: EventStatus) {
+    const { data } = await http.patch<Event>(`/api/events/${eventoId}/status`, { estado });
+    return data;
+}
+
+export async function deleteEvent(eventoId: string | number) {
+    await http.delete(`/api/events/${eventoId}`);
+}
+
+export async function getEventsByUser(userId: string | number) {
+    const { data } = await http.get<Event[]>(`/api/events/user/${userId}`);
+    return data;
+}

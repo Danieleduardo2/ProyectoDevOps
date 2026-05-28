@@ -16,6 +16,8 @@ import { useAuth } from "./auth/AuthContext";
 import { UserActionsPage } from "./pages/UserActionsPage";
 import { UsersAdminPage } from "./pages/UsersAdminPage";
 import { RequireAdmin } from "./auth/RequireAdmin";
+import { EventFormPage } from "./pages/EventFormPage";
+import { MyEventsPage } from "./pages/MyEventsPage";
 
 export default function App() {
     const { isAuthenticated } = useAuth();
@@ -36,7 +38,10 @@ export default function App() {
                 <Route path="/app" element={<AppHome />} />
                 <Route path="/user" element={<UserProfilePage />} />
                 <Route path="/events" element={<EventListPage />} />
+                <Route path="/events/create" element={<EventFormPage />} />
+                <Route path="/events/edit/:eventoId" element={<EventFormPage />} />
                 <Route path="/events/:eventoId" element={<EventDetailPage />} />
+                <Route path="/my-events" element={<MyEventsPage />} />
 
                 {/* Rutas del check-in / Reporte */}
                 <Route path="/checkin/escanear/:eventoId" element={<QrCheckinScannerPage />} />
