@@ -74,6 +74,19 @@ export function AppHome() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <button
+                        onClick={() => navigate("/my-events")}
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: P.text,
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                        }}
+                    >
+                        Mis Eventos
+                    </button>
                     <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
                         <div style={{
                             width: "7px", height: "7px", borderRadius: "50%",
@@ -204,6 +217,28 @@ export function AppHome() {
                         }}
                     >
                         Ver eventos →
+                    </button>
+                    <button
+                        onClick={() => navigate("/events/create")}
+                        style={{
+                            background: P.accentSoft,
+                            border: `1px solid rgba(99,149,210,0.5)`,
+                            borderRadius: "10px",
+                            color: P.accentLight,
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            padding: "12px 28px",
+                            cursor: "pointer",
+                            transition: "all 0.18s ease",
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = "rgba(37,99,235,0.25)";
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = P.accentSoft;
+                        }}
+                    >
+                        + Crear Evento
                     </button>
                     <button
                         onClick={() => navigate("/user")}

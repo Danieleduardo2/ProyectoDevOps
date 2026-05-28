@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEvent, registerToEvent, type Event } from "../api/eventos";
+import { getEvent, registerToEvent, deleteEvent, updateEventStatus, type Event } from "../api/eventos";
 import { getErrorMessage } from "../api/errorMessage";
+import { useAuth } from "../auth/AuthContext";
 
 const P = {
     bgMid: "#0f2240",
@@ -197,12 +198,17 @@ function InfoField({
 export function EventDetailPage() {
     const navigate = useNavigate();
     const { eventoId } = useParams();
+    const { user } = useAuth();
 
     const [event, setEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [registering, setRegistering] = useState(false);
+
+    const isOwner = event?.createdById === user?.id;
+    const isAdmin = user?.roles?.includes("ROLE_ADMIN");
+    const canManage = isOwner || isAdmin;
 
     useEffect(() => {
         async function load() {
@@ -242,6 +248,28 @@ export function EventDetailPage() {
             setError(getErrorMessage(err));
         } finally {
             setRegistering(false);
+        }
+    }
+
+    async function handleStatusChange(newStatus: any) {
+        if (!event) return;
+        try {
+            await updateEventStatus(event.id, newStatus);
+            setEvent({ ...event, estado: newStatus });
+            setSuccess("Estado actualizado a " + newStatus);
+        } catch (err) {
+            setError(getErrorMessage(err));
+        }
+    }
+
+    async function handleDelete() {
+        if (!event) return;
+        if (!confirm("¿Seguro que deseas eliminar este evento?")) return;
+        try {
+            await deleteEvent(event.id);
+            navigate("/my-events");
+        } catch (err) {
+            setError(getErrorMessage(err));
         }
     }
 
@@ -755,6 +783,32 @@ export function EventDetailPage() {
                                 >
                                     Ver reporte
                                 </button>
+                                
+                                {canManage && (
+                                    <>
+                                        <button onClick={() => navigate(`/events/edit/${event.id}`)} style={{...btnSecondary, color: P.amber}}>
+                                            Editar
+                                        </button>
+                                        {event.estado === "DRAFT" && (
+                                            <button onClick={() => handleStatusChange("PUBLISHED")} style={{...btnSecondary, color: P.green}}>
+                                                Publicar
+                                            </button>
+                                        )}
+                                        {event.estado === "PUBLISHED" && (
+                                            <button onClick={() => handleStatusChange("CLOSED")} style={{...btnSecondary, color: P.textMuted}}>
+                                                Cerrar Cupos
+                                            </button>
+                                        )}
+                                        {event.estado !== "CANCELLED" && (
+                                            <button onClick={() => handleStatusChange("CANCELLED")} style={{...btnSecondary, color: P.red}}>
+                                                Cancelar Evento
+                                            </button>
+                                        )}
+                                        <button onClick={handleDelete} style={{...btnSecondary, color: P.red, borderColor: P.red}}>
+                                            Eliminar
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </>
                     )}
