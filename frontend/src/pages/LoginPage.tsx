@@ -31,7 +31,7 @@ export function LoginPage() {
         try {
             setLoading(true);
             const res = await login({ email: email.trim(), password });
-            loginWithToken(res.token);
+            loginWithToken(res.token, res);
             navigate("/app", { replace: true });
         } catch (err) {
             setError(getErrorMessage(err));
