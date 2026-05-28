@@ -1183,52 +1183,42 @@ export function EventListPage() {
                                                                     : "Inscribirse →"}
                                                     </button>
 
-                                                    <button
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/checkin/escanear/${evento.id}`
-                                                            )
-                                                        }
-                                                        style={{
-                                                            ...btnGhost,
+                                                    {isAdmin && (
+                                                        <>
+                                                            <button
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/checkin/escanear/${evento.id}`
+                                                                    )
+                                                                }
+                                                                style={{
+                                                                    ...btnGhost,
+                                                                    fontSize: "13px",
+                                                                    padding: "8px 12px",
+                                                                }}
+                                                            >
+                                                                QR
+                                                            </button>
 
-                                                            fontSize:
-                                                                "13px",
-
-                                                            padding:
-                                                                "8px 12px",
-                                                        }}
-                                                    >
-                                                        QR
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/eventos/${evento.id}/reporte`
-                                                            )
-                                                        }
-                                                        style={{
-                                                            ...btnGhost,
-
-                                                            fontSize:
-                                                                "13px",
-
-                                                            padding:
-                                                                "8px 12px",
-
-                                                            color:
-                                                                P.purple,
-
-                                                            background:
-                                                                P.purpleSoft,
-
-                                                            borderColor:
-                                                                "rgba(167,139,250,0.25)",
-                                                        }}
-                                                    >
-                                                        Rep.
-                                                    </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    navigate(
+                                                                        `/eventos/${evento.id}/reporte`
+                                                                    )
+                                                                }
+                                                                style={{
+                                                                    ...btnGhost,
+                                                                    fontSize: "13px",
+                                                                    padding: "8px 12px",
+                                                                    color: P.purple,
+                                                                    background: P.purpleSoft,
+                                                                    borderColor: "rgba(167,139,250,0.25)",
+                                                                }}
+                                                            >
+                                                                Rep.
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </article>
                                         );
