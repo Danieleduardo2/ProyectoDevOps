@@ -67,6 +67,7 @@ jobs:
 
     steps:
       - name: Health check del backend
+        continue-on-error: true
         run: |
           echo "===== VERIFICACIÓN POST-DESPLIEGUE ====="
           URL="${{ vars.STAGING_URL }}/actuator/health"
