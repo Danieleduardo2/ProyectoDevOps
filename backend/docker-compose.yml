@@ -2,11 +2,25 @@ version: '3.9'
 
 services:
 
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-adminuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-DevOps123!}
+      POSTGRES_DB: ${DB_NAME:-usuarios_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   app:
     build: .
     container_name: spring_app
+    depends_on:
+      - db
     ports:
-      - "${SPRING_PORT}:8080"
+      - "${SPRING_PORT:-8080}:8080"
     environment:
       # Base de datos
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -29,3 +43,6 @@ services:
       SMTP_STARTTLS_REQUIRED: ${SMTP_STARTTLS_REQUIRED:-true}
       SMTP_FROM: ${SMTP_FROM:-noreply@eventos.local}
     restart: always
+
+volumes:
+  pgdata:
