@@ -3,37 +3,37 @@ import { useNavigate } from "react-router-dom";
 import { getUserActions, type UserAction } from "../api/userActions";
 
 const P = {
-    bgFrom: "#0d1b2e",
-    bgMid: "#0f2240",
-    bgTo: "#091528",
+    bgFrom: "#ffffff",
+    bgMid: "#f8fafc",
+    bgTo: "#f1f5f9",
 
-    surface: "#162035",
-    surfaceHover: "#1c2a45",
+    surface: "#ffffff",
+    surfaceHover: "#f8fafc",
 
-    border: "rgba(99,149,210,0.18)",
-    borderMid: "rgba(99,149,210,0.3)",
+    border: "rgba(0,0,0,0.08)",
+    borderMid: "rgba(0,0,0,0.15)",
 
-    accent: "#2563eb",
-    accentHover: "#1d4ed8",
-    accentLight: "#93c5fd",
-    accentSoft: "rgba(37,99,235,0.12)",
+    accent: "#e11d48",
+    accentHover: "#be123c",
+    accentLight: "#fb7185",
+    accentSoft: "rgba(225,29,72,0.12)",
 
-    text: "#f0f6ff",
-    textMuted: "rgba(200,220,255,0.55)",
-    textFaint: "rgba(200,220,255,0.3)",
+    text: "#1e293b",
+    textMuted: "#64748b",
+    textFaint: "#94a3b8",
 
-    green: "#4ade80",
-    greenSoft: "rgba(74,222,128,0.12)",
+    green: "#10b981",
+    greenSoft: "rgba(16,185,129,0.12)",
 
-    red: "#f87171",
-    redSoft: "rgba(248,113,113,0.12)",
+    red: "#ef4444",
+    redSoft: "rgba(239,68,68,0.12)",
 
-    purple: "#a78bfa",
-    purpleSoft: "rgba(167,139,250,0.12)",
+    purple: "#8b5cf6",
+    purpleSoft: "rgba(139,92,246,0.12)",
 };
 
 const btnPrimary: React.CSSProperties = {
-    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+    background: "linear-gradient(135deg, #e11d48, #be123c)",
     border: "none",
     borderRadius: "8px",
     color: "#fff",
@@ -100,7 +100,7 @@ export function UserActionsPage() {
                 border: "none",
                 outline: "none",
                 boxSizing: "border-box",
-                background: `radial-gradient(ellipse 80% 60% at 50% -10%, #1a3a6e 0%, ${P.bgMid} 45%, ${P.bgTo} 100%)`,
+                background: `radial-gradient(ellipse 80% 60% at 50% -10%, rgba(225,29,72,0.08) 0%, rgba(139,92,246,0.05) 45%, #f8fafc 100%)`,
                 color: P.text,
                 fontFamily: "'Segoe UI', system-ui, sans-serif",
             }}
@@ -113,7 +113,7 @@ export function UserActionsPage() {
                     justifyContent: "space-between",
                     padding: "1rem 2.5rem",
                     borderBottom: `1px solid ${P.border}`,
-                    background: "rgba(9,21,40,0.6)",
+                    background: "rgba(255,255,255,0.72)",
                     backdropFilter: "blur(16px)",
                     position: "sticky",
                     top: 0,
@@ -305,7 +305,7 @@ export function UserActionsPage() {
                                     value={size}
                                     onChange={(e) => setSize(Number(e.target.value))}
                                     style={{
-                                        background: "#162035",
+                                        background: P.surface,
                                         border: `1px solid ${P.border}`,
                                         borderRadius: "8px",
                                         color: P.text,

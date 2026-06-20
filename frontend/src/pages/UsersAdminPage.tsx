@@ -14,31 +14,31 @@ import { useAuth } from "../auth/AuthContext";
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
 
 const P = {
-  bgFrom: "#0d1b2e",
-  bgMid: "#0f2240",
-  bgTo: "#091528",
+  bgFrom: "#ffffff",
+  bgMid: "#f8fafc",
+  bgTo: "#f1f5f9",
 
-  surface: "#162035",
-  surfaceHover: "#1c2a45",
+  surface: "#ffffff",
+  surfaceHover: "#f8fafc",
 
-  border: "rgba(99,149,210,0.18)",
-  borderMid: "rgba(99,149,210,0.3)",
+  border: "rgba(0,0,0,0.08)",
+  borderMid: "rgba(0,0,0,0.15)",
 
-  accent: "#2563eb",
-  accentHover: "#1d4ed8",
-  accentLight: "#93c5fd",
-  accentSoft: "rgba(37,99,235,0.12)",
+  accent: "#e11d48",
+  accentHover: "#be123c",
+  accentLight: "#fb7185",
+  accentSoft: "rgba(225,29,72,0.12)",
 
-  text: "#f0f6ff",
-  textMuted: "rgba(200,220,255,0.55)",
+  text: "#1e293b",
+  textMuted: "#64748b",
 
-  green: "#4ade80",
-  greenSoft: "rgba(74,222,128,0.12)",
+  green: "#10b981",
+  greenSoft: "rgba(16,185,129,0.12)",
 
-  red: "#f87171",
-  redSoft: "rgba(248,113,113,0.12)",
+  red: "#ef4444",
+  redSoft: "rgba(239,68,68,0.12)",
 
-  yellow: "#facc15",
+  yellow: "#eab308",
 };
 
 export function UsersAdminPage() {
@@ -238,9 +238,9 @@ export function UsersAdminPage() {
         minHeight: "100vh",
         background: `radial-gradient(
           ellipse 80% 60% at 50% -10%,
-          #1a3a6e 0%,
-          ${P.bgMid} 45%,
-          ${P.bgTo} 100%
+          rgba(225,29,72,0.08) 0%,
+          rgba(139,92,246,0.05) 45%,
+          #f8fafc 100%
         )`,
         color: P.text,
         fontFamily: "'Segoe UI', system-ui, sans-serif",
@@ -251,7 +251,7 @@ export function UsersAdminPage() {
         style={{
           width: "100%",
           borderBottom: `1px solid ${P.border}`,
-          background: "rgba(9,21,40,0.72)",
+          background: "rgba(255,255,255,0.72)",
           backdropFilter: "blur(16px)",
           position: "sticky",
           top: 0,
@@ -336,27 +336,11 @@ export function UsersAdminPage() {
             }}
           >
             <button
-              onClick={() => navigate("/app")}
+              onClick={() => navigate("/admin")}
               style={btnSecondary}
             >
-              Inicio
+              ← Volver al panel
             </button>
-
-            <button
-              onClick={() => navigate("/user")}
-              style={btnSecondary}
-            >
-              Mi perfil
-            </button>
-
-            {isAdmin && (
-              <button
-                onClick={() => navigate("/admin")}
-                style={btnSecondary}
-              >
-                Admin
-              </button>
-            )}
           </div>
         </div>
       </header>
@@ -818,12 +802,11 @@ export function UsersAdminPage() {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: "rgba(22,32,53,0.88)",
-  border: "1px solid rgba(99,149,210,0.18)",
+  background: "#ffffff",
+  border: "1px solid rgba(0,0,0,0.08)",
   borderRadius: "22px",
   padding: "1.7rem",
-  backdropFilter: "blur(14px)",
-  boxShadow: "0 20px 50px rgba(0,0,0,0.22)",
+  boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
 };
 
 const sectionHeaderStyle: React.CSSProperties = {
@@ -846,16 +829,16 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "13px 14px",
   borderRadius: "12px",
-  border: "1px solid rgba(99,149,210,0.22)",
-  background: "#101a2d",
-  color: "#f0f6ff",
+  border: "1px solid rgba(0,0,0,0.15)",
+  background: "#ffffff",
+  color: "#1e293b",
   outline: "none",
   fontSize: "14px",
   boxSizing: "border-box",
 };
 
 const primaryButton: React.CSSProperties = {
-  background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+  background: "linear-gradient(135deg, #e11d48, #be123c)",
   border: "none",
   borderRadius: "12px",
   color: "#fff",
@@ -863,14 +846,14 @@ const primaryButton: React.CSSProperties = {
   fontWeight: 700,
   cursor: "pointer",
   fontSize: "14px",
-  boxShadow: "0 10px 30px rgba(37,99,235,0.35)",
+  boxShadow: "0 10px 30px rgba(225,29,72,0.25)",
 };
 
 const secondaryButton: React.CSSProperties = {
-  background: "rgba(37,99,235,0.12)",
-  border: "1px solid rgba(59,130,246,0.3)",
+  background: "transparent",
+  border: "1px solid rgba(0,0,0,0.15)",
   borderRadius: "12px",
-  color: "#93c5fd",
+  color: "#64748b",
   padding: "10px 14px",
   fontWeight: 600,
   cursor: "pointer",
@@ -878,10 +861,10 @@ const secondaryButton: React.CSSProperties = {
 };
 
 const dangerButton: React.CSSProperties = {
-  background: "rgba(248,113,113,0.08)",
-  border: "1px solid rgba(248,113,113,0.25)",
+  background: "rgba(239,68,68,0.08)",
+  border: "1px solid rgba(239,68,68,0.25)",
   borderRadius: "12px",
-  color: "#f87171",
+  color: "#ef4444",
   padding: "10px 14px",
   fontWeight: 600,
   cursor: "pointer",
@@ -890,9 +873,9 @@ const dangerButton: React.CSSProperties = {
 
 const btnSecondary: React.CSSProperties = {
   background: "transparent",
-  border: "1px solid rgba(99,149,210,0.3)",
+  border: "1px solid rgba(0,0,0,0.15)",
   borderRadius: "10px",
-  color: "rgba(200,220,255,0.82)",
+  color: "#64748b",
   fontSize: "13px",
   fontWeight: 600,
   padding: "10px 18px",
@@ -901,7 +884,7 @@ const btnSecondary: React.CSSProperties = {
 
 const tdStyle: React.CSSProperties = {
   padding: "16px",
-  borderBottom: "1px solid rgba(99,149,210,0.1)",
-  color: "#f0f6ff",
+  borderBottom: "1px solid rgba(0,0,0,0.08)",
+  color: "#1e293b",
   fontSize: "14px",
 };

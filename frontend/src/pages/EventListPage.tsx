@@ -1,153 +1,59 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-    getEvents,
-    registerToEvent,
-    type Event,
-    type EventStatus,
-    type PageResponse,
-} from "../api/eventos";
+import { getEvents, registerToEvent, type Event, type EventStatus, type PageResponse } from "../api/eventos";
 import { getInscripcionesByUser } from "../api/inscripciones";
 import { getErrorMessage } from "../api/errorMessage";
 import { useAuth } from "../auth/AuthContext";
 
-const P = {
-    bgMid: "#0f2240",
-    bgTo: "#091528",
+const eventStatuses: EventStatus[] = ["DRAFT", "PUBLISHED", "CLOSED", "CANCELLED"];
 
-    surface: "#162035",
-    surfaceHover: "#1c2a45",
-
-    border: "rgba(99,149,210,0.18)",
-    borderMid: "rgba(99,149,210,0.3)",
-
-    accent: "#2563eb",
-    accentLight: "#93c5fd",
-    accentSoft: "rgba(37,99,235,0.12)",
-
-    text: "#f0f6ff",
-    textMuted: "rgba(200,220,255,0.55)",
-    textFaint: "rgba(200,220,255,0.28)",
-
-    green: "#4ade80",
-    greenSoft: "rgba(74,222,128,0.12)",
-
-    red: "#f87171",
-    redSoft: "rgba(248,113,113,0.12)",
-
-    amber: "#fbbf24",
-    amberSoft: "rgba(251,191,36,0.1)",
-
-    purple: "#a78bfa",
-    purpleSoft: "rgba(167,139,250,0.12)",
-
-    cyan: "#67e8f9",
-    cyanSoft: "rgba(103,232,249,0.1)",
-};
-
-const statusMap: Record<
-    string,
-    { color: string; soft: string; label: string }
-> = {
-    PUBLISHED: {
-        color: P.green,
-        soft: P.greenSoft,
-        label: "Publicado",
-    },
-
-    DRAFT: {
-        color: P.amber,
-        soft: P.amberSoft,
-        label: "Borrador",
-    },
-
-    CANCELLED: {
-        color: P.red,
-        soft: P.redSoft,
-        label: "Cancelado",
-    },
-
-    CLOSED: {
-        color: P.textFaint,
-        soft: "rgba(255,255,255,0.05)",
-        label: "Cerrado",
-    },
-};
-
-function Badge({ estado }: { estado: string }) {
-    const s = statusMap[estado] ?? {
-        color: P.accentLight,
-        soft: P.accentSoft,
-        label: estado,
-    };
-
-    return (
-        <span
-            style={{
-                fontSize: "10.5px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                padding: "3px 10px",
-                borderRadius: "20px",
-                background: s.soft,
-                border: `1px solid ${s.color}35`,
-                color: s.color,
-            }}
-        >
-            {s.label}
-        </span>
-    );
-}
-
-const eventStatuses: EventStatus[] = [
-    "DRAFT",
-    "PUBLISHED",
-    "CLOSED",
-    "CANCELLED",
+const gradients = [
+    "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+    "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
+    "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
+    "linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)",
+    "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
+    "linear-gradient(135deg, #a735c4 0%, #ff007f 100%)"
 ];
+
+function parseDate(dateStr?: string) {
+    if (!dateStr) return { month: "N/A", day: "00" };
+    try {
+        const d = new Date(dateStr);
+        return {
+            month: d.toLocaleString('es-ES', { month: 'short' }).replace('.', ''),
+            day: d.getDate().toString().padStart(2, '0')
+        };
+    } catch {
+        return { month: "N/A", day: "00" };
+    }
+}
 
 export function EventListPage() {
     const navigate = useNavigate();
-    const { isAdmin, user } = useAuth();
+    const { user } = useAuth();
 
     const [page, setPage] = useState(0);
-    const [size, setSize] = useState(10);
-
+    const [size] = useState(10);
     const [nombre, setNombre] = useState("");
-    const [estado, setEstado] = useState<EventStatus | "">("");
-
+    const [categoria, setCategoria] = useState("");
     const [data, setData] = useState<PageResponse<Event> | null>(null);
-
     const [loading, setLoading] = useState(false);
-
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-
     const [registeringId, setRegisteringId] = useState<number | null>(null);
     const [registeredEventIds, setRegisteredEventIds] = useState<Set<number>>(new Set());
 
     async function load(pageNumber: number = page) {
         setError(null);
-        // ❌ NO BORRAR SUCCESS AQUÍ
-
         try {
             setLoading(true);
-
-            const res = await getEvents({
-                page: pageNumber,
-                size,
-                nombre: nombre.trim() || undefined,
-                estado: estado || undefined,
-            });
-
+            const res = await getEvents({ page: pageNumber, size, nombre: nombre.trim() || undefined, categoria: categoria || undefined, estado: "PUBLISHED" });
             setData(res);
 
             if (user?.id) {
                 const insc = await getInscripcionesByUser(user.id, { size: 200 });
-                const activeIds = insc.content
-                    .filter((i) => i.estado === "CONFIRMADA" || i.estado === "ASISTIDA")
-                    .map((i) => i.eventoId);
+                const activeIds = insc.content.filter((i) => i.estado === "CONFIRMADA" || i.estado === "ASISTIDA").map((i) => i.eventoId);
                 setRegisteredEventIds(new Set(activeIds));
             }
         } catch (err) {
@@ -157,13 +63,11 @@ export function EventListPage() {
         }
     }
 
-    useEffect(() => {
-        load();
-    }, [page, size]);
+    useEffect(() => { load(); }, [page, size]);
 
     async function applyFilters() {
         setPage(0);
-        setSuccess(null); // ✔ opcional: limpiar mensaje al filtrar
+        setSuccess(null);
         await load(0);
     }
 
@@ -171,15 +75,10 @@ export function EventListPage() {
         setError(null);
         setSuccess(null);
         setRegisteringId(eventoId);
-
         try {
             await registerToEvent(eventoId);
-
-            setSuccess(
-                "Inscripción realizada. Revisa tu correo para recibir el QR de invitación."
-            );
-
-            await load(); // recarga lista
+            setSuccess("Inscripción realizada. Revisa tu correo para recibir el QR de invitación.");
+            await load();
         } catch (err) {
             setError(getErrorMessage(err));
         } finally {
@@ -188,1342 +87,136 @@ export function EventListPage() {
     }
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                margin: 0,
-                padding: 0,
-                border: "none",
+        <div>
+            <div className="dash-card-header">
+                <h2>Explorar Eventos</h2>
+                <p>Revisa los próximos eventos, su estado y regístrate para recibir tu invitación con QR.</p>
+            </div>
 
-                background: `radial-gradient(ellipse 80% 60% at 50% -10%, #1a3a6e 0%, ${P.bgMid} 45%, ${P.bgTo} 100%)`,
-
-                color: P.text,
-                fontFamily:
-                    "'Segoe UI', system-ui, sans-serif",
-
-                boxSizing: "border-box",
-            }}
-        >
-            {/* HEADER */}
-            <header
-                style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-
-                    borderBottom: `1px solid ${P.border}`,
-
-                    background: "rgba(9,21,40,0.6)",
-                    backdropFilter: "blur(16px)",
-
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 10,
-
-                    padding: "1rem 1.5rem",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    style={{
-                        width: "100%",
-                        maxWidth: "1200px",
-
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-
-                        gap: "1rem",
-                        flexWrap: "wrap",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-
-                                background:
-                                    "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                            >
-                                <path
-                                    d="M7 1.5L12 4.5v5L7 12.5 2 9.5v-5L7 1.5z"
-                                    stroke="white"
-                                    strokeWidth="1.2"
-                                    fill="none"
-                                    strokeLinejoin="round"
-                                />
-
-                                <circle
-                                    cx="7"
-                                    cy="7"
-                                    r="1.5"
-                                    fill="white"
-                                />
-                            </svg>
-                        </div>
-
-                        <span
-                            style={{
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: P.text,
-                            }}
-                        >
-                            Sistema de Eventos
-                        </span>
+            <div className="dash-card" style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 250px' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '8px', fontWeight: 600 }}>Buscar por nombre</label>
+                        <input
+                            type="text"
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+                            placeholder="Nombre del evento..."
+                            style={{ width: '100%', padding: '10px 15px', border: '1px solid #ddd', borderRadius: '50px', outline: 'none' }}
+                        />
                     </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: "10px",
-                            flexWrap: "wrap",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <button
-                            onClick={() =>
-                                navigate("/app")
-                            }
-                            style={btnSecondary}
+                    <div style={{ flex: '1 1 200px' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '8px', fontWeight: 600 }}>Categoría</label>
+                        <select
+                            value={categoria}
+                            onChange={(e) => setCategoria(e.target.value)}
+                            style={{ width: '100%', padding: '10px 15px', border: '1px solid #ddd', borderRadius: '50px', outline: 'none', background: '#fff', cursor: 'pointer' }}
                         >
-                            Inicio
-                        </button>
-
-                        <button
-                            onClick={() =>
-                                navigate("/user")
-                            }
-                            style={btnSecondary}
-                        >
-                            Mi perfil
-                        </button>
-
-                        {isAdmin && (
-                            <button
-                                onClick={() =>
-                                    navigate("/admin")
-                                }
-                                style={btnSecondary}
-                            >
-                                Admin
-                            </button>
-                        )}
+                            <option value="">Todas</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Música">Música</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Educación">Educación</option>
+                            <option value="Negocios">Negocios</option>
+                            <option value="Arte">Arte</option>
+                            <option value="Otro">Otro</option>
+                        </select>
                     </div>
+                    <button className="btn-solid-pink" onClick={applyFilters} style={{ padding: '10px 25px', borderRadius: '50px', fontWeight: 600, border: 'none', boxShadow: '0 4px 15px rgba(225, 29, 72, 0.2)' }}>
+                        <i className="pi pi-search" style={{ marginRight: '8px' }}></i> Buscar
+                    </button>
                 </div>
-            </header>
-
-            {/* MAIN */}
-            <main
-                style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-
-                    padding: "2.5rem 1.5rem",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    style={{
-                        width: "100%",
-                        maxWidth: "1200px",
-                    }}
-                >
-                    {/* TITLE */}
-                    <div
-                        style={{
-                            marginBottom: "2rem",
-                            textAlign: "center",
-
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "6px",
-
-                                fontSize: "11px",
-                                letterSpacing: "0.15em",
-                                textTransform: "uppercase",
-
-                                fontWeight: 600,
-                                color: P.accentLight,
-
-                                background:
-                                    "rgba(37,99,235,0.14)",
-
-                                border:
-                                    "1px solid rgba(59,130,246,0.3)",
-
-                                borderRadius: "20px",
-
-                                padding: "5px 14px",
-
-                                marginBottom: "1rem",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontSize: "10px",
-                                }}
-                            >
-                                ●
-                            </span>
-
-                            Explorar
-                        </div>
-
-                        <h1
-                            style={{
-                                fontSize:
-                                    "clamp(1.8rem, 4vw, 2.7rem)",
-
-                                fontWeight: 700,
-
-                                margin:
-                                    "0 0 0.6rem",
-
-                                letterSpacing:
-                                    "-0.02em",
-                            }}
-                        >
-                            Eventos disponibles
-                        </h1>
-
-                        <p
-                            style={{
-                                fontSize: "0.95rem",
-                                color: P.textMuted,
-                                margin: 0,
-                                maxWidth: "700px",
-                                lineHeight: 1.7,
-                            }}
-                        >
-                            Revisa los próximos eventos,
-                            su estado y regístrate para
-                            recibir tu invitación con QR.
-                        </p>
-                    </div>
-
-                    {/* FILTERS */}
-                    <div
-                        style={{
-                            background: P.surface,
-                            border: `1px solid ${P.border}`,
-
-                            borderRadius: "16px",
-
-                            padding: "1.5rem",
-
-                            display: "flex",
-                            gap: "14px",
-
-                            flexWrap: "wrap",
-
-                            alignItems: "flex-end",
-
-                            justifyContent: "center",
-
-                            marginBottom: "1.8rem",
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection:
-                                    "column",
-
-                                gap: "6px",
-
-                                flex:
-                                    "1 1 280px",
-
-                                maxWidth: "400px",
-                            }}
-                        >
-                            <label
-                                style={{
-                                    fontSize:
-                                        "11px",
-
-                                    fontWeight:
-                                        600,
-
-                                    letterSpacing:
-                                        "0.08em",
-
-                                    textTransform:
-                                        "uppercase",
-
-                                    color:
-                                        P.textFaint,
-
-                                    textAlign:
-                                        "center",
-                                }}
-                            >
-                                Buscar por nombre
-                            </label>
-
-                            <input
-                                value={nombre}
-                                onChange={(e) =>
-                                    setNombre(
-                                        e.target.value
-                                    )
-                                }
-                                onKeyDown={(e) =>
-                                    e.key ===
-                                        "Enter" &&
-                                    applyFilters()
-                                }
-                                placeholder="Nombre del evento..."
-                                style={{
-                                    background:
-                                        "rgba(255,255,255,0.05)",
-
-                                    border:
-                                        `1px solid ${P.border}`,
-
-                                    borderRadius:
-                                        "10px",
-
-                                    color: P.text,
-
-                                    fontSize:
-                                        "14px",
-
-                                    padding:
-                                        "11px 14px",
-
-                                    outline:
-                                        "none",
-
-                                    fontFamily:
-                                        "inherit",
-
-                                    textAlign:
-                                        "center",
-                                }}
-                            />
-                        </div>
-
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection:
-                                    "column",
-
-                                gap: "6px",
-
-                                flex:
-                                    "1 1 180px",
-
-                                maxWidth: "220px",
-                            }}
-                        >
-                            <label
-                                style={{
-                                    fontSize:
-                                        "11px",
-
-                                    fontWeight:
-                                        600,
-
-                                    letterSpacing:
-                                        "0.08em",
-
-                                    textTransform:
-                                        "uppercase",
-
-                                    color:
-                                        P.textFaint,
-
-                                    textAlign:
-                                        "center",
-                                }}
-                            >
-                                Estado
-                            </label>
-
-                            <select
-                                value={estado}
-                                onChange={(e) =>
-                                    setEstado(
-                                        e.target
-                                            .value as
-                                            | EventStatus
-                                            | ""
-                                    )
-                                }
-                                style={{
-                                    background:
-                                        "#162035",
-
-                                    border:
-                                        `1px solid ${P.border}`,
-
-                                    borderRadius:
-                                        "10px",
-
-                                    color: P.text,
-
-                                    fontSize:
-                                        "14px",
-
-                                    padding:
-                                        "11px 14px",
-
-                                    cursor:
-                                        "pointer",
-
-                                    fontFamily:
-                                        "inherit",
-
-                                    textAlign:
-                                        "center",
-                                }}
-                            >
-                                <option value="">
-                                    Todos
-                                </option>
-
-                                {eventStatuses.map(
-                                    (s) => (
-                                        <option
-                                            key={s}
-                                            value={s}
-                                        >
-                                            {s}
-                                        </option>
-                                    )
-                                )}
-                            </select>
-                        </div>
-
-                        <button
-                            onClick={applyFilters}
-                            style={{
-                                ...btnPrimary,
-                                minWidth: "140px",
-                            }}
-                        >
-                            Buscar
-                        </button>
-                    </div>
-
-                    {/* ALERTS */}
-                    {error && (
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent:
-                                    "center",
-
-                                marginBottom:
-                                    "1.2rem",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    background:
-                                        P.redSoft,
-
-                                    border:
-                                        `1px solid rgba(248,113,113,0.25)`,
-
-                                    borderRadius:
-                                        "10px",
-
-                                    padding:
-                                        "12px 16px",
-
-                                    textAlign:
-                                        "center",
-
-                                    width: "100%",
-                                    maxWidth:
-                                        "700px",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize:
-                                            "13.5px",
-
-                                        color:
-                                            P.red,
-                                    }}
-                                >
-                                    {error}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {success && (
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent:
-                                    "center",
-
-                                marginBottom:
-                                    "1.2rem",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    background:
-                                        P.greenSoft,
-
-                                    border:
-                                        `1px solid rgba(74,222,128,0.25)`,
-
-                                    borderRadius:
-                                        "10px",
-
-                                    padding:
-                                        "12px 16px",
-
-                                    textAlign:
-                                        "center",
-
-                                    width: "100%",
-                                    maxWidth:
-                                        "700px",
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize:
-                                            "13.5px",
-
-                                        color:
-                                            P.green,
-                                    }}
-                                >
-                                    {success}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* LOADING */}
-                    {loading ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent:
-                                    "center",
-
-                                minHeight: "260px",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    textAlign:
-                                        "center",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: "36px",
-                                        height:
-                                            "36px",
-
-                                        borderRadius:
-                                            "50%",
-
-                                        border:
-                                            `2px solid ${P.border}`,
-
-                                        borderTopColor:
-                                            P.accentLight,
-
-                                        margin:
-                                            "0 auto 12px",
-
-                                        animation:
-                                            "spin 0.8s linear infinite",
-                                    }}
-                                />
-
-                                <style>
-                                    {`@keyframes spin { to { transform: rotate(360deg); } }`}
-                                </style>
-
-                                <p
-                                    style={{
-                                        color:
-                                            P.textMuted,
-
-                                        fontSize:
-                                            "14px",
-                                    }}
-                                >
-                                    Cargando
-                                    eventos...
-                                </p>
-                            </div>
-                        </div>
-                    ) : !data?.content.length ? (
-                        <div
-                            style={{
-                                background:
-                                    P.surface,
-
-                                border:
-                                    `1px solid ${P.border}`,
-
-                                borderRadius:
-                                    "16px",
-
-                                padding: "3rem",
-
-                                textAlign:
-                                    "center",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize:
-                                        "2rem",
-
-                                    marginBottom:
-                                        "0.75rem",
-                                }}
-                            >
-                                🗓️
-                            </div>
-
-                            <p
-                                style={{
-                                    color:
-                                        P.textMuted,
-
-                                    fontSize:
-                                        "14px",
-
-                                    margin: 0,
-                                }}
-                            >
-                                No se encontraron
-                                eventos con los
-                                filtros seleccionados.
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* GRID */}
-                            <div
-                                style={{
-                                    display: "grid",
-
-                                    gridTemplateColumns:
-                                        "repeat(auto-fit, minmax(320px, 1fr))",
-
-                                    gap: "18px",
-
-                                    marginBottom:
-                                        "1.8rem",
-                                }}
-                            >
-                                {data.content.map(
-                                    (evento) => {
-                                        const s =
-                                            statusMap[
-                                                evento
-                                                    .estado
-                                            ] ??
-                                            statusMap.DRAFT;
-
-                                        return (
-                                            <article
-                                                key={
-                                                    evento.id
-                                                }
-                                                style={{
-                                                    background:
-                                                        P.surface,
-
-                                                    border:
-                                                        `1px solid ${P.border}`,
-
-                                                    borderRadius:
-                                                        "18px",
-
-                                                    padding:
-                                                        "1.5rem",
-
-                                                    display:
-                                                        "flex",
-
-                                                    flexDirection:
-                                                        "column",
-
-                                                    textAlign:
-                                                        "center",
-
-                                                    transition:
-                                                        "all 0.2s ease",
-
-                                                    position:
-                                                        "relative",
-
-                                                    overflow:
-                                                        "hidden",
-                                                }}
-                                                onMouseEnter={(
-                                                    e
-                                                ) => {
-                                                    e.currentTarget.style.background =
-                                                        P.surfaceHover;
-
-                                                    e.currentTarget.style.borderColor =
-                                                        `${s.color}40`;
-
-                                                    e.currentTarget.style.transform =
-                                                        "translateY(-3px)";
-                                                }}
-                                                onMouseLeave={(
-                                                    e
-                                                ) => {
-                                                    e.currentTarget.style.background =
-                                                        P.surface;
-
-                                                    e.currentTarget.style.borderColor =
-                                                        P.border;
-
-                                                    e.currentTarget.style.transform =
-                                                        "translateY(0)";
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        position:
-                                                            "absolute",
-
-                                                        top: 0,
-
-                                                        left:
-                                                            "15%",
-
-                                                        right:
-                                                            "15%",
-
-                                                        height:
-                                                            "1px",
-
-                                                        background:
-                                                            `linear-gradient(90deg, transparent, ${s.color}55, transparent)`,
-                                                    }}
-                                                />
-
-                                                {/* TOP */}
-                                                <div
-                                                    style={{
-                                                        display:
-                                                            "flex",
-
-                                                        justifyContent:
-                                                            "space-between",
-
-                                                        alignItems:
-                                                            "center",
-
-                                                        marginBottom:
-                                                            "1rem",
-
-                                                        gap: "10px",
-                                                    }}
-                                                >
-                                                    <Badge
-                                                        estado={
-                                                            evento.estado
-                                                        }
-                                                    />
-
-                                                    <span
-                                                        style={{
-                                                            fontSize:
-                                                                "12px",
-
-                                                            color:
-                                                                P.textFaint,
-                                                        }}
-                                                    >
-                                                        {
-                                                            evento.fecha
-                                                        }{" "}
-                                                        ·{" "}
-                                                        {
-                                                            evento.hora
-                                                        }
-                                                    </span>
-                                                </div>
-
-                                                {/* TITLE */}
-                                                <h2
-                                                    style={{
-                                                        fontSize:
-                                                            "1.1rem",
-
-                                                        fontWeight:
-                                                            700,
-
-                                                        color:
-                                                            P.text,
-
-                                                        margin:
-                                                            "0 0 0.7rem",
-
-                                                        lineHeight:
-                                                            1.35,
-                                                    }}
-                                                >
-                                                    {
-                                                        evento.nombre
-                                                    }
-                                                </h2>
-
-                                                {/* DESC */}
-                                                <p
-                                                    style={{
-                                                        fontSize:
-                                                            "13px",
-
-                                                        lineHeight:
-                                                            1.7,
-
-                                                        color:
-                                                            P.textMuted,
-
-                                                        margin:
-                                                            "0 0 1rem",
-
-                                                        flexGrow:
-                                                            1,
-                                                    }}
-                                                >
-                                                    {evento.descripcion ||
-                                                        "Sin descripción disponible."}
-                                                </p>
-
-                                                {/* CHIPS */}
-                                                <div
-                                                    style={{
-                                                        display:
-                                                            "flex",
-
-                                                        flexWrap:
-                                                            "wrap",
-
-                                                        justifyContent:
-                                                            "center",
-
-                                                        gap: "6px",
-
-                                                        marginBottom:
-                                                            "1.1rem",
-                                                    }}
-                                                >
-                                                    {[
-                                                        evento.ubicacion,
-
-                                                        `Cupos: ${evento.capacidadMaxima ?? "-"}`,
-
-                                                        evento.parkingAvailable
-                                                            ? `P: ${evento.parkingSpots ?? 0}`
-                                                            : "Sin parking",
-                                                    ].map(
-                                                        (
-                                                            chip,
-                                                            i
-                                                        ) => (
-                                                            <span
-                                                                key={
-                                                                    i
-                                                                }
-                                                                style={{
-                                                                    fontSize:
-                                                                        "11px",
-
-                                                                    color:
-                                                                        P.textFaint,
-
-                                                                    background:
-                                                                        "rgba(255,255,255,0.04)",
-
-                                                                    border:
-                                                                        `1px solid ${P.border}`,
-
-                                                                    borderRadius:
-                                                                        "20px",
-
-                                                                    padding:
-                                                                        "4px 10px",
-                                                                }}
-                                                            >
-                                                                {
-                                                                    chip
-                                                                }
-                                                            </span>
-                                                        )
-                                                    )}
-                                                </div>
-
-                                                {/* ACTIONS */}
-                                                <div
-                                                    style={{
-                                                        display:
-                                                            "flex",
-
-                                                        gap: "8px",
-
-                                                        flexWrap:
-                                                            "wrap",
-
-                                                        justifyContent:
-                                                            "center",
-
-                                                        borderTop:
-                                                            `1px solid ${P.border}`,
-
-                                                        paddingTop:
-                                                            "1rem",
-                                                    }}
-                                                >
-                                                    <button
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/events/${evento.id}`
-                                                            )
-                                                        }
-                                                        style={
-                                                            btnSecondary
-                                                        }
-                                                    >
-                                                        Ver
-                                                        detalle
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() =>
-                                                            onRegister(
-                                                                evento.id
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            evento.estado !==
-                                                                "PUBLISHED" ||
-                                                            registeringId ===
-                                                                evento.id ||
-                                                            registeredEventIds.has(evento.id)
-                                                        }
-                                                        style={{
-                                                            ...btnPrimary,
-
-                                                            opacity:
-                                                                evento.estado !==
-                                                                    "PUBLISHED" ||
-                                                                registeringId ===
-                                                                    evento.id ||
-                                                                registeredEventIds.has(evento.id)
-                                                                    ? 0.45
-                                                                    : 1,
-
-                                                            cursor:
-                                                                evento.estado !==
-                                                                    "PUBLISHED" ||
-                                                                registeringId ===
-                                                                    evento.id ||
-                                                                registeredEventIds.has(evento.id)
-                                                                    ? "not-allowed"
-                                                                    : "pointer",
-
-                                                            fontSize:
-                                                                "13px",
-
-                                                            padding:
-                                                                "8px 16px",
-                                                        }}
-                                                    >
-                                                        {evento.estado !== "PUBLISHED"
-                                                            ? "No disponible"
-                                                            : registeredEventIds.has(evento.id)
-                                                                ? "Inscrito"
-                                                                : registeringId === evento.id
-                                                                    ? "Inscribiendo..."
-                                                                    : "Inscribirse →"}
-                                                    </button>
-
-                                                    {isAdmin && (
-                                                        <>
-                                                            <button
-                                                                onClick={() =>
-                                                                    navigate(
-                                                                        `/checkin/escanear/${evento.id}`
-                                                                    )
-                                                                }
-                                                                style={{
-                                                                    ...btnGhost,
-                                                                    fontSize: "13px",
-                                                                    padding: "8px 12px",
-                                                                }}
-                                                            >
-                                                                QR
-                                                            </button>
-
-                                                            <button
-                                                                onClick={() =>
-                                                                    navigate(
-                                                                        `/eventos/${evento.id}/reporte`
-                                                                    )
-                                                                }
-                                                                style={{
-                                                                    ...btnGhost,
-                                                                    fontSize: "13px",
-                                                                    padding: "8px 12px",
-                                                                    color: P.purple,
-                                                                    background: P.purpleSoft,
-                                                                    borderColor: "rgba(167,139,250,0.25)",
-                                                                }}
-                                                            >
-                                                                Rep.
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </article>
-                                        );
-                                    }
-                                )}
-                            </div>
-
-                            {/* PAGINATION */}
-                            {data && (
-                                <div
-                                    style={{
-                                        background:
-                                            P.surface,
-
-                                        border:
-                                            `1px solid ${P.border}`,
-
-                                        borderRadius:
-                                            "14px",
-
-                                        padding:
-                                            "1rem 1.5rem",
-
-                                        display:
-                                            "flex",
-
-                                        alignItems:
-                                            "center",
-
-                                        gap: "14px",
-
-                                        flexWrap:
-                                            "wrap",
-
-                                        justifyContent:
-                                            "center",
-                                    }}
-                                >
-                                    <button
-                                        disabled={
-                                            loading ||
-                                            page === 0
-                                        }
-                                        onClick={() =>
-                                            setPage(
-                                                (
-                                                    p
-                                                ) =>
-                                                    Math.max(
-                                                        0,
-                                                        p -
-                                                            1
-                                                    )
-                                            )
-                                        }
-                                        style={{
-                                            ...btnSecondary,
-
-                                            opacity:
-                                                page ===
-                                                0
-                                                    ? 0.4
-                                                    : 1,
-
-                                            cursor:
-                                                page ===
-                                                0
-                                                    ? "not-allowed"
-                                                    : "pointer",
-                                        }}
-                                    >
-                                        ←
-                                        Anterior
-                                    </button>
-
-                                    <span
-                                        style={{
-                                            fontSize:
-                                                "13px",
-
-                                            color:
-                                                P.textMuted,
-                                        }}
-                                    >
-                                        Página{" "}
-                                        <strong
-                                            style={{
-                                                color:
-                                                    P.text,
-                                            }}
-                                        >
-                                            {page +
-                                                1}
-                                        </strong>{" "}
-                                        de{" "}
-                                        <strong
-                                            style={{
-                                                color:
-                                                    P.text,
-                                            }}
-                                        >
-                                            {data.totalPages ??
-                                                1}
-                                        </strong>
-                                    </span>
-
-                                    <button
-                                        disabled={
-                                            loading ||
-                                            !data ||
-                                            page +
-                                                1 >=
-                                                data.totalPages
-                                        }
-                                        onClick={() =>
-                                            setPage(
-                                                (
-                                                    p
-                                                ) =>
-                                                    p +
-                                                    1
-                                            )
-                                        }
-                                        style={{
-                                            ...btnSecondary,
-
-                                            opacity:
-                                                !data ||
-                                                page +
-                                                    1 >=
-                                                    data.totalPages
-                                                    ? 0.4
-                                                    : 1,
-
-                                            cursor:
-                                                !data ||
-                                                page +
-                                                    1 >=
-                                                    data.totalPages
-                                                    ? "not-allowed"
-                                                    : "pointer",
-                                        }}
-                                    >
-                                        Siguiente →
-                                    </button>
-
-                                    <div
-                                        style={{
-                                            display:
-                                                "flex",
-
-                                            alignItems:
-                                                "center",
-
-                                            gap: "8px",
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                fontSize:
-                                                    "12px",
-
-                                                color:
-                                                    P.textFaint,
-                                            }}
-                                        >
-                                            Mostrar
+            </div>
+
+            {error && <div style={{ padding: '15px', background: '#f8d7da', color: '#721c24', borderRadius: '8px', marginBottom: '20px', border: '1px solid #f5c6cb' }}>{error}</div>}
+            {success && <div style={{ padding: '15px', background: '#d4edda', color: '#155724', borderRadius: '8px', marginBottom: '20px', border: '1px solid #c3e6cb' }}>{success}</div>}
+
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '50px', color: '#999' }}>Cargando eventos...</div>
+            ) : !data?.content.length ? (
+                <div className="dash-card" style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+                    <i className="pi pi-calendar-times" style={{ fontSize: '3rem', color: '#ccc', marginBottom: '15px' }}></i>
+                    <h3>No se encontraron eventos</h3>
+                    <p>Intenta cambiar los filtros de búsqueda.</p>
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
+                    {data.content.map((evt, idx) => {
+                        const isRegistered = registeredEventIds.has(evt.id);
+                        const isRegistering = registeringId === evt.id;
+                        const dateObj = parseDate(evt.fecha);
+                        const bgGradient = gradients[idx % gradients.length];
+                        
+                        return (
+                            <div key={evt.id} className="ev-card">
+                                <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                <div className="ev-content">
+                                    <div className="ev-info-row">
+                                        <div className="ev-date">
+                                            <div className="ev-date-month">{dateObj.month}</div>
+                                            <div className="ev-date-day">{dateObj.day}</div>
+                                        </div>
+                                        <div className="ev-details">
+                                            <h4 className="ev-title">{evt.nombre}</h4>
+                                            <div className="ev-location">
+                                                <i className="pi pi-map-marker" style={{ color: '#9ca3af' }}></i> {evt.ubicacion}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '15px', marginTop: '10px' }}>
+                                        {evt.descripcion?.substring(0, 80)}{evt.descripcion?.length > 80 ? '...' : ''}
+                                    </p>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                        <span style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48', padding: '4px 12px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                            {evt.categoria || 'Otro'}
                                         </span>
-
-                                        <select
-                                            value={
-                                                size
-                                            }
-                                            onChange={(
-                                                e
-                                            ) =>
-                                                setSize(
-                                                    Number(
-                                                        e
-                                                            .target
-                                                            .value
-                                                    )
-                                                )
-                                            }
-                                            style={{
-                                                background:
-                                                    "#162035",
-
-                                                border:
-                                                    `1px solid ${P.border}`,
-
-                                                borderRadius:
-                                                    "7px",
-
-                                                color:
-                                                    P.text,
-
-                                                fontSize:
-                                                    "13px",
-
-                                                padding:
-                                                    "5px 10px",
-
-                                                cursor:
-                                                    "pointer",
-
-                                                fontFamily:
-                                                    "inherit",
-                                            }}
-                                        >
-                                            <option value={5}>
-                                                5
-                                            </option>
-
-                                            <option value={10}>
-                                                10
-                                            </option>
-
-                                            <option value={20}>
-                                                20
-                                            </option>
-                                        </select>
-
-                                        <span
-                                            style={{
-                                                fontSize:
-                                                    "12px",
-
-                                                color:
-                                                    P.textFaint,
-                                            }}
-                                        >
-                                            por
-                                            página
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: evt.estado === 'PUBLISHED' ? '#10b981' : '#6b7280', background: evt.estado === 'PUBLISHED' ? '#d1fae5' : '#f3f4f6', padding: '4px 10px', borderRadius: '10px' }}>
+                                            {evt.estado === 'PUBLISHED' ? 'Publicado' : 'Borrador'}
                                         </span>
                                     </div>
+
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', borderTop: '1px solid #f3f4f6', paddingTop: '15px' }}>
+                                        {evt.createdById === user?.id ? (
+                                            <button className="btn-solid-pink" onClick={() => navigate(`/events/${evt.id}`)} style={{ flex: 1, padding: '10px 15px', borderRadius: '50px', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(225, 29, 72, 0.2)' }}>
+                                                <i className="pi pi-cog"></i> Administrar
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button className="btn-outline-pink" onClick={() => navigate(`/events/${evt.id}`)} style={{ flex: 1, padding: '8px', borderRadius: '50px', fontWeight: 600 }}>
+                                                    Ver Detalles
+                                                </button>
+                                                
+                                                {evt.estado === "PUBLISHED" && (
+                                                    isRegistered ? (
+                                                        <button disabled style={{ flex: 1, padding: '8px', background: '#dcfce7', color: '#166534', border: '1px solid #166534', borderRadius: '50px', fontWeight: 600, cursor: 'not-allowed' }}>
+                                                            Inscrito <i className="pi pi-check"></i>
+                                                        </button>
+                                                    ) : (
+                                                        <button className="btn-solid-pink" onClick={() => onRegister(evt.id)} disabled={isRegistering} style={{ flex: 1, padding: '8px' }}>
+                                                            {isRegistering ? "..." : "Inscribirse"}
+                                                        </button>
+                                                    )
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                        </>
-                    )}
+                            </div>
+                        )
+                    })}
                 </div>
-            </main>
+            )}
+            
+            {/* Pagination */}
+            {data && data.totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px' }}>
+                    <button className="btn-dash-outline" disabled={page === 0} onClick={() => setPage(p => p - 1)}>&lt;</button>
+                    <span style={{ display: 'flex', alignItems: 'center', fontWeight: 600 }}>Página {page + 1} de {data.totalPages}</span>
+                    <button className="btn-dash-outline" disabled={page >= data.totalPages - 1} onClick={() => setPage(p => p + 1)}>&gt;</button>
+                </div>
+            )}
         </div>
     );
 }
-
-const btnPrimary: React.CSSProperties = {
-    background:
-        "linear-gradient(135deg, #2563eb, #1d4ed8)",
-
-    border: "none",
-
-    borderRadius: "8px",
-
-    color: "#fff",
-
-    fontSize: "13px",
-
-    fontWeight: 600,
-
-    padding: "9px 18px",
-
-    cursor: "pointer",
-
-    boxShadow:
-        "0 4px 14px rgba(37,99,235,0.35)",
-
-    letterSpacing: "0.01em",
-};
-
-const btnSecondary: React.CSSProperties = {
-    background: "transparent",
-
-    border:
-        "1px solid rgba(99,149,210,0.3)",
-
-    borderRadius: "8px",
-
-    color: "rgba(200,220,255,0.7)",
-
-    fontSize: "13px",
-
-    fontWeight: 500,
-
-    padding: "9px 18px",
-
-    cursor: "pointer",
-};
-
-const btnGhost: React.CSSProperties = {
-    background:
-        "rgba(103,232,249,0.08)",
-
-    border:
-        "1px solid rgba(103,232,249,0.2)",
-
-    borderRadius: "8px",
-
-    color: "#67e8f9",
-
-    fontSize: "13px",
-
-    fontWeight: 500,
-
-    padding: "9px 14px",
-
-    cursor: "pointer",
-};

@@ -1,33 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getEvent, createEvent, updateEvent, type Event } from "../api/eventos";
-
-const P = {
-    bgMid: "#0f2240",
-    bgTo: "#091528",
-    surface: "#162035",
-    border: "rgba(99,149,210,0.18)",
-    borderFocus: "rgba(99,149,210,0.5)",
-    text: "#f0f6ff",
-    textMuted: "rgba(200,220,255,0.55)",
-    textFaint: "rgba(200,220,255,0.3)",
-    accent: "#2563eb",
-    accentHover: "#1d4ed8",
-    red: "#f87171",
-};
-
-const inputStyle: React.CSSProperties = {
-    width: "100%",
-    background: "rgba(9,21,40,0.3)",
-    border: `1px solid ${P.border}`,
-    borderRadius: "8px",
-    padding: "10px 14px",
-    color: P.text,
-    fontSize: "14px",
-    outline: "none",
-    boxSizing: "border-box",
-    transition: "border 0.2s ease",
-};
+import { getEvent, createEvent, updateEvent, uploadEventImage, type Event } from "../api/eventos";
 
 export function EventFormPage() {
     const { eventoId } = useParams();
@@ -35,31 +8,24 @@ export function EventFormPage() {
     const isEditing = !!eventoId;
 
     const [formData, setFormData] = useState<Partial<Event>>({
-        nombre: "",
-        descripcion: "",
-        fecha: "",
-        hora: "",
-        ubicacion: "",
-        capacidadMaxima: 10,
-        parkingAvailable: false,
-        parkingSpots: 0,
+        nombre: "", descripcion: "", categoria: "Música", fecha: "", hora: "", ubicacion: "", capacidadMaxima: 10, parkingAvailable: false, parkingSpots: 0,
     });
     
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(isEditing);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isEditing && eventoId) {
-            getEvent(eventoId)
-                .then((data) => {
-                    setFormData(data);
-                    setInitialLoading(false);
+            getEvent(Number(eventoId))
+                .then((data) => { 
+                    setFormData(data); 
+                    if (data.imageUrl) setPreviewUrl(import.meta.env.VITE_API_BASE_URL + data.imageUrl);
+                    setInitialLoading(false); 
                 })
-                .catch((e) => {
-                    setError("No se pudo cargar el evento: " + e.message);
-                    setInitialLoading(false);
-                });
+                .catch((e) => { setError("No se pudo cargar el evento: " + e.message); setInitialLoading(false); });
         }
     }, [eventoId, isEditing]);
 
@@ -68,10 +34,16 @@ export function EventFormPage() {
         setLoading(true);
         setError(null);
         try {
+            let finalFormData = { ...formData };
+            if (selectedFile) {
+                const uploadRes = await uploadEventImage(selectedFile);
+                finalFormData.imageUrl = uploadRes.url;
+            }
+
             if (isEditing && eventoId) {
-                await updateEvent(eventoId, formData);
+                await updateEvent(Number(eventoId), finalFormData);
             } else {
-                await createEvent(formData);
+                await createEvent(finalFormData);
             }
             navigate("/my-events");
         } catch (err: any) {
@@ -81,176 +53,183 @@ export function EventFormPage() {
         }
     };
 
-    if (initialLoading) {
-        return (
-            <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse 80% 60% at 50% -10%, #1a3a6e 0%, ${P.bgMid} 45%, ${P.bgTo} 100%)`, color: P.text, display: "flex", justifyContent: "center", alignItems: "center" }}>
-                Cargando...
-            </div>
-        );
-    }
+    if (initialLoading) return <div style={{ padding: '50px', textAlign: 'center', color: '#666' }}>Cargando...</div>;
+
+    const inputStyle = {
+        width: '100%', 
+        padding: '14px 18px', 
+        border: '1px solid #e5e7eb', 
+        borderRadius: '12px', 
+        outline: 'none', 
+        fontSize: '1rem', 
+        background: '#f9fafb',
+        color: '#1f2937',
+        transition: 'all 0.2s'
+    };
+
+    const labelStyle = {
+        display: 'block', 
+        fontWeight: 600, 
+        marginBottom: '8px', 
+        color: '#4b5563',
+        fontSize: '0.95rem'
+    };
+
+    const sectionTitleStyle = {
+        fontSize: '1.2rem', 
+        fontWeight: 700, 
+        color: '#1f2937', 
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+    };
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                background: `radial-gradient(ellipse 80% 60% at 50% -10%, #1a3a6e 0%, ${P.bgMid} 45%, ${P.bgTo} 100%)`,
-                color: P.text,
-                fontFamily: "'Segoe UI', system-ui, sans-serif",
-                padding: "2rem",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                boxSizing: "border-box"
-            }}
-        >
-            <div style={{ width: "100%", maxWidth: "600px", marginBottom: "1rem" }}>
-                <button
-                    onClick={() => navigate(-1)}
-                    style={{
-                        background: "transparent",
-                        border: "none",
-                        color: P.textMuted,
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        padding: 0
-                    }}
-                >
-                    ← Volver
-                </button>
+        <div style={{ maxWidth: '850px', margin: '0 auto', paddingBottom: '50px' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
+                <div onClick={() => navigate(-1)} style={{ width: '40px', height: '40px', background: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', color: '#6b7280', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                    <i className="pi pi-arrow-left"></i>
+                </div>
+                <div>
+                    <h2 style={{ margin: 0, fontSize: '1.8rem', color: '#1f2937' }}>{isEditing ? "Editar Evento" : "Crear Nuevo Evento"}</h2>
+                    <p style={{ margin: '5px 0 0 0', color: '#6b7280' }}>Completa el formulario para {isEditing ? "actualizar los detalles del" : "publicar tu"} evento.</p>
+                </div>
             </div>
 
-            <div
-                style={{
-                    background: P.surface,
-                    border: `1px solid ${P.border}`,
-                    borderRadius: "16px",
-                    padding: "2rem",
-                    width: "100%",
-                    maxWidth: "600px",
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.25)",
-                    boxSizing: "border-box"
-                }}
-            >
-                <h1 style={{ margin: "0 0 1.5rem", fontSize: "1.5rem" }}>
-                    {isEditing ? "Editar Evento" : "Crear Nuevo Evento"}
-                </h1>
+            <div style={{ background: 'white', borderRadius: '24px', padding: '40px', boxShadow: '0 10px 40px rgba(0,0,0,0.03)', border: '1px solid #f3f4f6' }}>
+                {error && <div style={{ padding: '15px', background: '#fef2f2', color: '#991b1b', borderRadius: '12px', marginBottom: '25px', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '10px' }}><i className="pi pi-exclamation-triangle"></i> {error}</div>}
 
-                {error && (
-                    <div style={{ background: "rgba(248,113,113,0.1)", border: `1px solid ${P.red}`, color: P.red, padding: "10px", borderRadius: "8px", marginBottom: "1rem" }}>
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                    
+                    {/* Section 1 */}
                     <div>
-                        <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Nombre del Evento</label>
-                        <input
-                            type="text"
-                            required
-                            value={formData.nombre}
-                            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                            style={inputStyle}
-                        />
-                    </div>
+                        <h3 style={sectionTitleStyle}>
+                            <div style={{ background: '#fff0f5', color: '#e11d48', width: '35px', height: '35px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="pi pi-info-circle"></i></div>
+                            Detalles Principales
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div>
+                                <label style={labelStyle}>Nombre del Evento *</label>
+                                <input required type="text" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} style={inputStyle} placeholder="Ej: Concierto de Verano, Conferencia Tech..." />
+                            </div>
 
-                    <div>
-                        <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Descripción</label>
-                        <textarea
-                            required
-                            rows={3}
-                            value={formData.descripcion}
-                            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                            style={{ ...inputStyle, resize: "vertical" }}
-                        />
-                    </div>
+                            <div>
+                                <label style={labelStyle}>Categoría del Evento *</label>
+                                <select required value={formData.categoria} onChange={e => setFormData({ ...formData, categoria: e.target.value })} style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}>
+                                    <option value="Música">Música</option>
+                                    <option value="Deportes">Deportes</option>
+                                    <option value="Tecnología">Tecnología</option>
+                                    <option value="Arte y Cultura">Arte y Cultura</option>
+                                    <option value="Negocios">Negocios</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
 
-                    <div style={{ display: "flex", gap: "1rem" }}>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Fecha</label>
-                            <input
-                                type="date"
-                                required
-                                value={formData.fecha}
-                                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                                style={inputStyle}
-                            />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Hora</label>
-                            <input
-                                type="time"
-                                required
-                                value={formData.hora?.substring(0,5)}
-                                onChange={(e) => setFormData({ ...formData, hora: e.target.value + ":00" })}
-                                style={inputStyle}
-                            />
+                            <div>
+                                <label style={labelStyle}>Descripción</label>
+                                <textarea required value={formData.descripcion} onChange={e => setFormData({ ...formData, descripcion: e.target.value })} style={{ ...inputStyle, minHeight: '120px', resize: 'vertical' }} placeholder="Escribe los detalles, qué pasará, quiénes estarán..." />
+                            </div>
+
+                            <div>
+                                <label style={labelStyle}>Foto de Portada</label>
+                                <div style={{ border: '2px dashed #e5e7eb', borderRadius: '12px', padding: '20px', textAlign: 'center', background: '#f9fafb', position: 'relative', cursor: 'pointer' }}>
+                                    <input type="file" accept="image/*" onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            setSelectedFile(e.target.files[0]);
+                                            setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+                                        }
+                                    }} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }} />
+                                    {previewUrl ? (
+                                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                                            <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }} />
+                                            <p style={{ margin: '10px 0 0 0', color: '#6b7280', fontSize: '0.85rem' }}>Haz clic para cambiar la imagen</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ padding: '20px 0', color: '#9ca3af' }}>
+                                            <i className="pi pi-image" style={{ fontSize: '2rem', marginBottom: '10px', color: '#d1d5db' }}></i>
+                                            <p style={{ margin: 0, color: '#6b7280' }}>Haz clic para subir una imagen</p>
+                                            <span style={{ fontSize: '0.8rem' }}>Recomendado: 800x400 (PNG, JPG)</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
+                    <div style={{ height: '1px', background: '#f3f4f6' }}></div>
+
+                    {/* Section 2 */}
                     <div>
-                        <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Ubicación</label>
-                        <input
-                            type="text"
-                            required
-                            value={formData.ubicacion}
-                            onChange={(e) => setFormData({ ...formData, ubicacion: e.target.value })}
-                            style={inputStyle}
-                        />
-                    </div>
-
-                    <div>
-                        <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Capacidad Máxima</label>
-                        <input
-                            type="number"
-                            min="1"
-                            required
-                            value={formData.capacidadMaxima}
-                            onChange={(e) => setFormData({ ...formData, capacidadMaxima: parseInt(e.target.value) || 0 })}
-                            style={inputStyle}
-                        />
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
-                        <input
-                            type="checkbox"
-                            id="parking"
-                            checked={formData.parkingAvailable}
-                            onChange={(e) => setFormData({ ...formData, parkingAvailable: e.target.checked })}
-                        />
-                        <label htmlFor="parking" style={{ fontSize: "14px" }}>Habilitar Parqueadero</label>
-                    </div>
-
-                    {formData.parkingAvailable && (
-                        <div>
-                            <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", color: P.textMuted }}>Cupos de Parqueadero</label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={formData.parkingSpots}
-                                onChange={(e) => setFormData({ ...formData, parkingSpots: parseInt(e.target.value) || 0 })}
-                                style={inputStyle}
-                            />
+                        <h3 style={sectionTitleStyle}>
+                            <div style={{ background: '#f3e8ff', color: '#8b5cf6', width: '35px', height: '35px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="pi pi-map-marker"></i></div>
+                            Cuándo y Dónde
+                        </h3>
+                        
+                        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                <label style={labelStyle}>Fecha *</label>
+                                <input required type="date" value={formData.fecha} onChange={e => setFormData({ ...formData, fecha: e.target.value })} style={inputStyle} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                <label style={labelStyle}>Hora *</label>
+                                <input required type="time" value={formData.hora} onChange={e => setFormData({ ...formData, hora: e.target.value })} style={inputStyle} />
+                            </div>
                         </div>
-                    )}
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            marginTop: "1rem",
-                            background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                            border: "none",
-                            borderRadius: "8px",
-                            color: "#fff",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            padding: "12px",
-                            cursor: loading ? "not-allowed" : "pointer",
-                            boxShadow: "0 4px 14px rgba(37,99,235,0.35)",
-                        }}
-                    >
-                        {loading ? "Guardando..." : "Guardar Evento"}
-                    </button>
+                        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                            <div style={{ flex: 2, minWidth: '300px' }}>
+                                <label style={labelStyle}>Ubicación / Dirección *</label>
+                                <input required type="text" value={formData.ubicacion} onChange={e => setFormData({ ...formData, ubicacion: e.target.value })} style={inputStyle} placeholder="Ej: Auditorio Principal, Ciudad de México" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ height: '1px', background: '#f3f4f6' }}></div>
+
+                    {/* Section 3 */}
+                    <div>
+                        <h3 style={sectionTitleStyle}>
+                            <div style={{ background: '#d1fae5', color: '#10b981', width: '35px', height: '35px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="pi pi-sliders-h"></i></div>
+                            Logística y Capacidad
+                        </h3>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ maxWidth: '300px' }}>
+                                <label style={labelStyle}>Capacidad Máxima de Asistentes *</label>
+                                <div style={{ position: 'relative' }}>
+                                    <i className="pi pi-users" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }}></i>
+                                    <input required type="number" min="1" value={formData.capacidadMaxima} onChange={e => setFormData({ ...formData, capacidadMaxima: Number(e.target.value) })} style={{ ...inputStyle, paddingLeft: '45px' }} />
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#f8f9fa', padding: '25px', borderRadius: '16px', border: '1px solid #f3f4f6' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '15px', fontWeight: 600, color: '#374151', cursor: 'pointer', margin: 0 }}>
+                                    <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: formData.parkingAvailable ? 'none' : '2px solid #d1d5db', background: formData.parkingAvailable ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                        {formData.parkingAvailable && <i className="pi pi-check" style={{ fontSize: '0.8rem' }}></i>}
+                                    </div>
+                                    <input type="checkbox" checked={formData.parkingAvailable} onChange={e => setFormData({ ...formData, parkingAvailable: e.target.checked })} style={{ display: 'none' }} />
+                                    <span>¿El evento ofrece estacionamiento?</span>
+                                </label>
+
+                                {formData.parkingAvailable && (
+                                    <div style={{ marginTop: '20px', paddingLeft: '40px' }}>
+                                        <label style={labelStyle}>Cantidad de cupos de estacionamiento</label>
+                                        <input type="number" min="0" value={formData.parkingSpots} onChange={e => setFormData({ ...formData, parkingSpots: Number(e.target.value) })} style={{ ...inputStyle, maxWidth: '200px' }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px', marginTop: '10px' }}>
+                        <button type="button" className="btn-outline-pink" onClick={() => navigate(-1)} style={{ padding: '12px 30px' }}>Cancelar</button>
+                        <button type="submit" className="btn-solid-pink" disabled={loading} style={{ padding: '12px 40px', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(225,29,72,0.2)' }}>
+                            {loading ? "Guardando..." : isEditing ? "Actualizar Evento" : "Crear Evento"}
+                        </button>
+                    </div>
+
                 </form>
             </div>
         </div>

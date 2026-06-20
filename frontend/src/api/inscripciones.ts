@@ -5,7 +5,8 @@ export type InscripcionResponse = {
     id: number;
     usuarioId: number;
     eventoId: number;
-    evento: Event;
+    eventoNombre?: string;
+    eventoFecha?: string;
     estado: string;
     asistio: boolean;
     checkinAt?: string | null;

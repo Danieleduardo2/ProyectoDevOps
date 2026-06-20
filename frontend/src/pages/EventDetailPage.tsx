@@ -4,816 +4,185 @@ import { getEvent, registerToEvent, deleteEvent, updateEventStatus, type Event }
 import { getErrorMessage } from "../api/errorMessage";
 import { useAuth } from "../auth/AuthContext";
 
-const P = {
-    bgMid: "#0f2240",
-    bgTo: "#091528",
-    surface: "#162035",
-    surfaceHover: "#1c2a45",
-    border: "rgba(99,149,210,0.18)",
-    borderMid: "rgba(99,149,210,0.3)",
-    accent: "#2563eb",
-    accentLight: "#93c5fd",
-    accentSoft: "rgba(37,99,235,0.12)",
-    text: "#f0f6ff",
-    textMuted: "rgba(200,220,255,0.55)",
-    textFaint: "rgba(200,220,255,0.28)",
-    green: "#4ade80",
-    greenSoft: "rgba(74,222,128,0.12)",
-    red: "#f87171",
-    redSoft: "rgba(248,113,113,0.12)",
-    amber: "#fbbf24",
-    amberSoft: "rgba(251,191,36,0.1)",
-    purple: "#a78bfa",
-    purpleSoft: "rgba(167,139,250,0.12)",
-};
-
-const pageBg: React.CSSProperties = {
-    minHeight: "100vh",
-    margin: 0,
-    padding: 0,
-    border: "none",
-    background: `radial-gradient(ellipse 80% 60% at 50% -10%, #1a3a6e 0%, ${P.bgMid} 45%, ${P.bgTo} 100%)`,
-    color: P.text,
-    fontFamily: "'Segoe UI', system-ui, sans-serif",
-    boxSizing: "border-box",
-};
-
-const btnPrimary: React.CSSProperties = {
-    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-    border: "none",
-    borderRadius: "10px",
-    color: "#fff",
-    fontSize: "14px",
-    fontWeight: 600,
-    padding: "11px 24px",
-    cursor: "pointer",
-    boxShadow: "0 4px 14px rgba(37,99,235,0.4)",
-    letterSpacing: "0.01em",
-    transition: "all 0.18s ease",
-};
-
-const btnSecondary: React.CSSProperties = {
-    background: "transparent",
-    border: `1px solid ${P.borderMid}`,
-    borderRadius: "10px",
-    color: P.accentLight,
-    fontSize: "14px",
-    fontWeight: 500,
-    padding: "11px 24px",
-    cursor: "pointer",
-    transition: "all 0.18s ease",
-};
-
-const btnGhost: React.CSSProperties = {
-    background: P.purpleSoft,
-    border: `1px solid rgba(167,139,250,0.25)`,
-    borderRadius: "10px",
-    color: P.purple,
-    fontSize: "14px",
-    fontWeight: 500,
-    padding: "11px 24px",
-    cursor: "pointer",
-    transition: "all 0.18s ease",
-};
-
-function StatusBadge({ estado }: { estado: string }) {
-    const map: Record<
-        string,
-        { color: string; soft: string; label: string }
-    > = {
-        PUBLISHED: {
-            color: P.green,
-            soft: P.greenSoft,
-            label: "Publicado",
-        },
-        DRAFT: {
-            color: P.amber,
-            soft: P.amberSoft,
-            label: "Borrador",
-        },
-        CANCELLED: {
-            color: P.red,
-            soft: P.redSoft,
-            label: "Cancelado",
-        },
-        FINISHED: {
-            color: P.textFaint,
-            soft: "rgba(255,255,255,0.05)",
-            label: "Finalizado",
-        },
-    };
-
-    const s =
-        map[estado] ?? {
-            color: P.accentLight,
-            soft: P.accentSoft,
-            label: estado,
-        };
-
-    return (
-        <span
-            style={{
-                fontSize: "11.5px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                background: s.soft,
-                border: `1px solid ${s.color}35`,
-                color: s.color,
-            }}
-        >
-            {s.label}
-        </span>
-    );
-}
-
-function InfoField({
-    icon,
-    label,
-    value,
-}: {
-    icon: React.ReactNode;
-    label: string;
-    value: React.ReactNode;
-}) {
-    return (
-        <div
-            style={{
-                background: P.surface,
-                border: `1px solid ${P.border}`,
-                borderRadius: "12px",
-                padding: "1rem 1.2rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-                textAlign: "center",
-                alignItems: "center",
-                justifyContent: "center",
-            }}
-        >
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "7px",
-                }}
-            >
-                <span
-                    style={{
-                        color: P.textFaint,
-                        display: "flex",
-                    }}
-                >
-                    {icon}
-                </span>
-
-                <span
-                    style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: P.textFaint,
-                    }}
-                >
-                    {label}
-                </span>
-            </div>
-
-            <div
-                style={{
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: P.text,
-                }}
-            >
-                {value}
-            </div>
-        </div>
-    );
-}
-
 export function EventDetailPage() {
     const navigate = useNavigate();
     const { eventoId } = useParams();
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
 
-    const [event, setEvent] = useState<Event | null>(null);
+    const [evt, setEvt] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
-    const [registering, setRegistering] = useState(false);
+    const [actionLoading, setActionLoading] = useState(false);
 
-    const isOwner = event?.createdById === user?.id;
-    const isAdmin = user?.roles?.includes("ROLE_ADMIN");
-    const canManage = isOwner || isAdmin;
+    const isOrganizer = user?.id === evt?.createdById;
+    const canManage = isAdmin || isOrganizer;
 
     useEffect(() => {
-        async function load() {
-            if (!eventoId) {
-                setError("No se encontró el ID del evento.");
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-                setError(null);
-
-                const res = await getEvent(eventoId);
-                setEvent(res);
-            } catch (err) {
-                setError(getErrorMessage(err));
-            } finally {
-                setLoading(false);
-            }
-        }
-
         load();
     }, [eventoId]);
 
-    async function onRegister() {
-        if (!event) return;
-
-        setError(null);
-        setSuccess(null);
-        setRegistering(true);
-
+    async function load() {
+        if (!eventoId) return;
         try {
-            await registerToEvent(event.id);
-            setSuccess("Inscripción realizada correctamente.");
+            setLoading(true);
+            const data = await getEvent(Number(eventoId));
+            setEvt(data);
         } catch (err) {
             setError(getErrorMessage(err));
         } finally {
-            setRegistering(false);
+            setLoading(false);
         }
     }
 
-    async function handleStatusChange(newStatus: any) {
-        if (!event) return;
+    async function onRegister() {
+        if (!evt) return;
         try {
-            await updateEventStatus(event.id, newStatus);
-            setEvent({ ...event, estado: newStatus });
-            setSuccess("Estado actualizado a " + newStatus);
+            setActionLoading(true);
+            await registerToEvent(evt.id);
+            alert("¡Te has inscrito al evento exitosamente! Revisa tu correo o 'Mis Eventos'.");
+            await load();
         } catch (err) {
-            setError(getErrorMessage(err));
+            alert(getErrorMessage(err));
+        } finally {
+            setActionLoading(false);
         }
     }
 
-    async function handleDelete() {
-        if (!event) return;
-        if (!confirm("¿Seguro que deseas eliminar este evento?")) return;
+    async function onDelete() {
+        if (!evt) return;
+        if (!confirm("¿Estás seguro de eliminar este evento?")) return;
         try {
-            await deleteEvent(event.id);
-            navigate("/my-events");
+            setActionLoading(true);
+            await deleteEvent(evt.id);
+            navigate("/events");
         } catch (err) {
-            setError(getErrorMessage(err));
+            alert(getErrorMessage(err));
+        } finally {
+            setActionLoading(false);
         }
     }
+
+    async function onPublish() {
+        if (!evt) return;
+        try {
+            setActionLoading(true);
+            await updateEventStatus(evt.id, "PUBLISHED");
+            await load();
+        } catch (err) {
+            alert(getErrorMessage(err));
+        } finally {
+            setActionLoading(false);
+        }
+    }
+
+    if (loading) return <div style={{ padding: '50px', textAlign: 'center', color: '#666' }}>Cargando evento...</div>;
+    if (error || !evt) return <div style={{ padding: '50px', textAlign: 'center', color: '#dc3545' }}>Error: {error || "Evento no encontrado"}</div>;
+
+    const bannerGradient = "linear-gradient(135deg, #a735c4 0%, #e11d48 100%)";
 
     return (
-        <div style={pageBg}>
-            {/* HEADER */}
-            <header
-                style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    borderBottom: `1px solid ${P.border}`,
-                    background: "rgba(9,21,40,0.6)",
-                    backdropFilter: "blur(16px)",
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 10,
-                    padding: "1rem 1.5rem",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    style={{
-                        width: "100%",
-                        maxWidth: "1100px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "1rem",
-                        flexWrap: "wrap",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-                                background:
-                                    "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                            >
-                                <path
-                                    d="M7 1.5L12 4.5v5L7 12.5 2 9.5v-5L7 1.5z"
-                                    stroke="white"
-                                    strokeWidth="1.2"
-                                    fill="none"
-                                    strokeLinejoin="round"
-                                />
-                                <circle
-                                    cx="7"
-                                    cy="7"
-                                    r="1.5"
-                                    fill="white"
-                                />
-                            </svg>
-                        </div>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '50px' }}>
+            <div style={{ marginBottom: '20px' }}>
+                <button onClick={() => navigate(-1)} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 500 }}>
+                    <i className="pi pi-arrow-left"></i> Volver
+                </button>
+            </div>
 
-                        <span
-                            style={{
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: P.text,
-                            }}
-                        >
-                            Sistema de Eventos
-                        </span>
+            <div style={{ background: 'white', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.04)', border: '1px solid #f3f4f6' }}>
+                {/* Header Banner */}
+                <div style={{ background: evt.imageUrl ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bannerGradient, padding: '40px 40px', color: 'white', position: 'relative' }}>
+                    <span style={{ position: 'absolute', top: '20px', right: '20px', padding: '6px 15px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, background: evt.estado === 'PUBLISHED' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.3)', color: evt.estado === 'PUBLISHED' ? '#166534' : 'white', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                        {evt.estado === 'PUBLISHED' ? 'Publicado' : 'Borrador'}
+                    </span>
+                    <h1 style={{ margin: '0 0 10px 0', fontSize: '2.5rem', fontWeight: 800 }}>{evt.nombre}</h1>
+                    <div style={{ display: 'flex', gap: '20px', opacity: 0.9 }}>
+                        <div><i className="pi pi-tag"></i> {evt.categoria || 'Otro'}</div>
+                        <div><i className="pi pi-calendar"></i> {evt.fecha}</div>
+                        <div><i className="pi pi-clock"></i> {evt.hora}</div>
+                        <div><i className="pi pi-map-marker"></i> {evt.ubicacion}</div>
+                    </div>
+                </div>
+
+                <div style={{ padding: '40px', display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+                    {/* Left Column (Main Info) */}
+                    <div style={{ flex: '2', minWidth: '300px' }}>
+                        <h3 style={{ fontSize: '1.2rem', color: '#1f2937', marginTop: 0, marginBottom: '15px' }}>Acerca del evento</h3>
+                        <p style={{ color: '#4b5563', lineHeight: 1.7, fontSize: '1rem', whiteSpace: 'pre-wrap' }}>
+                            {evt.descripcion}
+                        </p>
+
+                        <h3 style={{ fontSize: '1.2rem', color: '#1f2937', marginTop: '30px', marginBottom: '15px' }}>Detalles logísticos</h3>
+                        <div style={{ display: 'flex', gap: '20px' }}>
+                            <div style={{ flex: 1, background: '#f9fafb', padding: '15px', borderRadius: '12px', border: '1px solid #f3f4f6' }}>
+                                <div style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '5px' }}>Estacionamiento</div>
+                                <div style={{ color: '#1f2937', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <i className={`pi ${evt.parkingAvailable ? 'pi-check-circle text-green' : 'pi-times-circle text-red'}`} style={{ color: evt.parkingAvailable ? '#10b981' : '#ef4444' }}></i>
+                                    {evt.parkingAvailable ? `${evt.parkingSpots} cupos` : 'No disponible'}
+                                </div>
+                            </div>
+                            <div style={{ flex: 1, background: '#f9fafb', padding: '15px', borderRadius: '12px', border: '1px solid #f3f4f6' }}>
+                                <div style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '5px' }}>Ocupación</div>
+                                <div style={{ color: '#1f2937', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <i className="pi pi-users" style={{ color: '#3b82f6' }}></i>
+                                    {evt.inscritosCount ?? 0} / {evt.capacidadMaxima}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <button
-                        onClick={() => navigate("/events")}
-                        style={btnSecondary}
-                    >
-                        ← Volver a eventos
-                    </button>
-                </div>
-            </header>
-
-            {/* MAIN */}
-            <main
-                style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    padding: "2.5rem 1.5rem",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    style={{
-                        width: "100%",
-                        maxWidth: "950px",
-                    }}
-                >
-                    {/* LOADING */}
-                    {loading && (
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                minHeight: "50vh",
-                            }}
-                        >
-                            <div style={{ textAlign: "center" }}>
-                                <div
-                                    style={{
-                                        width: "36px",
-                                        height: "36px",
-                                        borderRadius: "50%",
-                                        border: `2px solid ${P.border}`,
-                                        borderTopColor:
-                                            P.accentLight,
-                                        margin:
-                                            "0 auto 12px",
-                                        animation:
-                                            "spin 0.8s linear infinite",
-                                    }}
-                                />
-
-                                <style>
-                                    {`@keyframes spin { to { transform: rotate(360deg); } }`}
-                                </style>
-
-                                <p
-                                    style={{
-                                        color: P.textMuted,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    Cargando evento...
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ERROR */}
-                    {!loading && error && !event && (
-                        <div
-                            style={{
-                                background: P.surface,
-                                border:
-                                    `1px solid rgba(248,113,113,0.2)`,
-                                borderRadius: "14px",
-                                padding: "1.5rem",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "12px",
-                                justifyContent: "center",
-                                textAlign: "center",
-                            }}
-                        >
-                            <p
-                                style={{
-                                    fontSize: "14px",
-                                    color: P.red,
-                                    margin: 0,
-                                }}
-                            >
-                                {error}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* EVENT */}
-                    {!loading && event && (
-                        <>
-                            {/* TITLE */}
-                            <div
-                                style={{
-                                    marginBottom: "2rem",
-                                    textAlign: "center",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "6px",
-                                        fontSize: "11px",
-                                        letterSpacing:
-                                            "0.15em",
-                                        textTransform:
-                                            "uppercase",
-                                        fontWeight: 600,
-                                        color:
-                                            P.accentLight,
-                                        background:
-                                            "rgba(37,99,235,0.14)",
-                                        border:
-                                            "1px solid rgba(59,130,246,0.3)",
-                                        borderRadius:
-                                            "20px",
-                                        padding:
-                                            "5px 14px",
-                                        marginBottom:
-                                            "1rem",
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            fontSize:
-                                                "10px",
-                                        }}
-                                    >
-                                        ●
-                                    </span>
-
-                                    Detalle del evento
-                                </div>
-
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection:
-                                            "column",
-                                        alignItems:
-                                            "center",
-                                        gap: "14px",
-                                    }}
-                                >
-                                    <h1
-                                        style={{
-                                            fontSize:
-                                                "clamp(1.8rem, 4vw, 2.7rem)",
-                                            fontWeight:
-                                                700,
-                                            margin: 0,
-                                            letterSpacing:
-                                                "-0.02em",
-                                            lineHeight:
-                                                1.1,
-                                            textAlign:
-                                                "center",
-                                        }}
-                                    >
-                                        {event.nombre}
-                                    </h1>
-
-                                    <StatusBadge
-                                        estado={
-                                            event.estado
-                                        }
-                                    />
-                                </div>
-
-                                {event.descripcion && (
-                                    <p
-                                        style={{
-                                            fontSize:
-                                                "1rem",
-                                            lineHeight:
-                                                1.8,
-                                            color:
-                                                P.textMuted,
-                                            margin:
-                                                "1rem 0 0",
-                                            maxWidth:
-                                                "700px",
-                                            textAlign:
-                                                "center",
-                                        }}
-                                    >
-                                        {
-                                            event.descripcion
-                                        }
+                    {/* Right Column (Actions) */}
+                    <div style={{ flex: '1', minWidth: '250px' }}>
+                        <div style={{ background: '#f9fafb', borderRadius: '16px', padding: '25px', border: '1px solid #e5e7eb', position: 'sticky', top: '20px' }}>
+                            
+                            {!isOrganizer && (
+                                <>
+                                    <h4 style={{ margin: '0 0 10px 0', color: '#1f2937' }}>Asistencia</h4>
+                                    <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '20px', lineHeight: 1.5 }}>
+                                        Regístrate para asegurar tu cupo y obtener tu código QR de acceso.
                                     </p>
-                                )}
-                            </div>
-
-                            {/* INFO GRID */}
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns:
-                                        "repeat(auto-fit, minmax(220px, 1fr))",
-                                    gap: "14px",
-                                    marginBottom:
-                                        "1.8rem",
-                                }}
-                            >
-                                <InfoField
-                                    label="Fecha"
-                                    value={event.fecha}
-                                    icon={<span>📅</span>}
-                                />
-
-                                <InfoField
-                                    label="Hora"
-                                    value={event.hora}
-                                    icon={<span>⏰</span>}
-                                />
-
-                                <InfoField
-                                    label="Ubicación"
-                                    value={
-                                        event.ubicacion
-                                    }
-                                    icon={<span>📍</span>}
-                                />
-
-                                <InfoField
-                                    label="Cupo máximo"
-                                    value={
-                                        event.capacidadMaxima
-                                    }
-                                    icon={<span>👥</span>}
-                                />
-
-                                <InfoField
-                                    label="Parking"
-                                    value={
-                                        event.parkingAvailable
-                                            ? `Sí — ${event.parkingSpots ?? 0} espacios`
-                                            : "No disponible"
-                                    }
-                                    icon={<span>🅿️</span>}
-                                />
-
-                                <InfoField
-                                    label="Creador"
-                                    value={
-                                        event.createdByNombre
-                                            ? `${event.createdByNombre} ${event.createdByApellido}`
-                                            : "No disponible"
-                                    }
-                                    icon={<span>👤</span>}
-                                />
-
-                                <InfoField
-                                    label="Actualizado"
-                                    value={
-                                        event.updatedAt ??
-                                        "Sin información"
-                                    }
-                                    icon={<span>🔄</span>}
-                                />
-                            </div>
-
-                            {/* ALERTS */}
-                            {error && (
-                                <div
-                                    style={{
-                                        display:
-                                            "flex",
-                                        justifyContent:
-                                            "center",
-                                        marginBottom:
-                                            "1rem",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            background:
-                                                P.redSoft,
-                                            border:
-                                                `1px solid rgba(248,113,113,0.25)`,
-                                            borderRadius:
-                                                "10px",
-                                            padding:
-                                                "12px 16px",
-                                            textAlign:
-                                                "center",
-                                            width:
-                                                "100%",
-                                            maxWidth:
-                                                "650px",
-                                        }}
+                                    <button 
+                                        className="btn-solid-pink" 
+                                        disabled={evt.estado !== 'PUBLISHED' || (evt.inscritosCount ?? 0) >= evt.capacidadMaxima || actionLoading} 
+                                        onClick={onRegister}
+                                        style={{ width: '100%', padding: '14px', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(225,29,72,0.2)' }}
                                     >
-                                        <span
-                                            style={{
-                                                fontSize:
-                                                    "13.5px",
-                                                color:
-                                                    P.red,
-                                            }}
-                                        >
-                                            {error}
-                                        </span>
-                                    </div>
-                                </div>
+                                        {actionLoading ? "Procesando..." : "Inscribirme al Evento"}
+                                    </button>
+                                </>
                             )}
 
-                            {success && (
-                                <div
-                                    style={{
-                                        display:
-                                            "flex",
-                                        justifyContent:
-                                            "center",
-                                        marginBottom:
-                                            "1rem",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            background:
-                                                P.greenSoft,
-                                            border:
-                                                `1px solid rgba(74,222,128,0.25)`,
-                                            borderRadius:
-                                                "10px",
-                                            padding:
-                                                "12px 16px",
-                                            textAlign:
-                                                "center",
-                                            width:
-                                                "100%",
-                                            maxWidth:
-                                                "650px",
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                fontSize:
-                                                    "13.5px",
-                                                color:
-                                                    P.green,
-                                            }}
-                                        >
-                                            {success}
-                                        </span>
+                            {canManage && (
+                                <>
+                                    <h4 style={{ margin: '0 0 15px 0', color: '#1f2937' }}>Gestión (Organizador)</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {evt.estado === 'DRAFT' && (
+                                            <button className="btn-solid-pink" style={{ background: '#10b981', border: 'none', padding: '12px', width: '100%' }} disabled={actionLoading} onClick={onPublish}>
+                                                <i className="pi pi-send"></i> Publicar Evento
+                                            </button>
+                                        )}
+                                        {evt.estado === 'PUBLISHED' && (
+                                            <>
+                                                <button className="btn-solid-pink" style={{ background: '#8b5cf6', border: 'none', padding: '12px', width: '100%', boxShadow: '0 4px 10px rgba(139, 92, 246, 0.3)' }} onClick={() => navigate(`/checkin/escanear/${evt.id}`)}>
+                                                    <i className="pi pi-camera"></i> Escanear Entradas QR
+                                                </button>
+                                                <button className="btn-solid-pink" style={{ background: '#3b82f6', border: 'none', padding: '12px', width: '100%', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)' }} onClick={() => navigate(`/eventos/${evt.id}/reporte`)}>
+                                                    <i className="pi pi-chart-bar"></i> Reporte de Asistencia
+                                                </button>
+                                            </>
+                                        )}
+                                        <button className="btn-outline-pink" disabled={actionLoading} onClick={() => navigate(`/events/edit/${evt.id}`)} style={{ padding: '12px', width: '100%' }}>
+                                            <i className="pi pi-pencil"></i> Editar Información
+                                        </button>
+                                        <button className="btn-outline-pink" style={{ color: '#dc3545', borderColor: '#fca5a5', padding: '12px', width: '100%', background: '#fef2f2' }} disabled={actionLoading} onClick={onDelete}>
+                                            <i className="pi pi-trash"></i> Eliminar Evento
+                                        </button>
                                     </div>
-                                </div>
+                                </>
                             )}
-
-                            {/* ACTIONS */}
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: "12px",
-                                    flexWrap: "wrap",
-                                    justifyContent:
-                                        "center",
-                                    alignItems:
-                                        "center",
-                                    width: "100%",
-                                }}
-                            >
-                                <button
-                                    onClick={
-                                        onRegister
-                                    }
-                                    disabled={
-                                        event.estado !==
-                                            "PUBLISHED" ||
-                                        registering
-                                    }
-                                    style={{
-                                        ...btnPrimary,
-                                        opacity:
-                                            event.estado !==
-                                                "PUBLISHED" ||
-                                            registering
-                                                ? 0.45
-                                                : 1,
-                                        cursor:
-                                            event.estado !==
-                                                "PUBLISHED" ||
-                                            registering
-                                                ? "not-allowed"
-                                                : "pointer",
-                                    }}
-                                >
-                                    {event.estado !==
-                                    "PUBLISHED"
-                                        ? "Solo eventos publicados"
-                                        : registering
-                                            ? "Inscribiendo..."
-                                            : "Inscribirme →"}
-                                </button>
-
-                                <button
-                                    onClick={() =>
-                                        navigate(
-                                            `/checkin/escanear/${event.id}`
-                                        )
-                                    }
-                                    style={
-                                        btnSecondary
-                                    }
-                                >
-                                    Escáner QR
-                                </button>
-
-                                <button
-                                    onClick={() =>
-                                        navigate(
-                                            `/eventos/${event.id}/reporte`
-                                        )
-                                    }
-                                    style={btnGhost}
-                                >
-                                    Ver reporte
-                                </button>
-                                
-                                {canManage && (
-                                    <>
-                                        <button onClick={() => navigate(`/events/edit/${event.id}`)} style={{...btnSecondary, color: P.amber}}>
-                                            Editar
-                                        </button>
-                                        {event.estado === "DRAFT" && (
-                                            <button onClick={() => handleStatusChange("PUBLISHED")} style={{...btnSecondary, color: P.green}}>
-                                                Publicar
-                                            </button>
-                                        )}
-                                        {event.estado === "PUBLISHED" && (
-                                            <button onClick={() => handleStatusChange("CLOSED")} style={{...btnSecondary, color: P.textMuted}}>
-                                                Cerrar Cupos
-                                            </button>
-                                        )}
-                                        {event.estado !== "CANCELLED" && (
-                                            <button onClick={() => handleStatusChange("CANCELLED")} style={{...btnSecondary, color: P.red}}>
-                                                Cancelar Evento
-                                            </button>
-                                        )}
-                                        <button onClick={handleDelete} style={{...btnSecondary, color: P.red, borderColor: P.red}}>
-                                            Eliminar
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </>
-                    )}
+                        </div>
+                    </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

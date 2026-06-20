@@ -3,25 +3,25 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getEventoReporte, type EventoReporteResponse } from "../api/eventos";
 
 const P = {
-    bgFrom: "#0d1b2e",
-    bgMid: "#0f2240",
-    bgTo: "#091528",
-    surface: "#162035",
-    surfaceAlt: "#1c2a45",
-    border: "rgba(99,149,210,0.18)",
-    borderMid: "rgba(99,149,210,0.3)",
-    accent: "#2563eb",
-    accentLight: "#93c5fd",
-    accentSoft: "rgba(37,99,235,0.12)",
-    text: "#f0f6ff",
-    textMuted: "rgba(200,220,255,0.55)",
-    textFaint: "rgba(200,220,255,0.28)",
-    green: "#4ade80",
-    greenSoft: "rgba(74,222,128,0.12)",
-    red: "#f87171",
-    redSoft: "rgba(248,113,113,0.12)",
-    amber: "#fbbf24",
-    amberSoft: "rgba(251,191,36,0.12)",
+    bgFrom: "#ffffff",
+    bgMid: "#f8fafc",
+    bgTo: "#f1f5f9",
+    surface: "#ffffff",
+    surfaceAlt: "#f8fafc",
+    border: "rgba(0,0,0,0.08)",
+    borderMid: "rgba(0,0,0,0.15)",
+    accent: "#e11d48",
+    accentLight: "#fb7185",
+    accentSoft: "rgba(225,29,72,0.12)",
+    text: "#1e293b",
+    textMuted: "#64748b",
+    textFaint: "#94a3b8",
+    green: "#10b981",
+    greenSoft: "rgba(16,185,129,0.12)",
+    red: "#ef4444",
+    redSoft: "rgba(239,68,68,0.12)",
+    amber: "#f59e0b",
+    amberSoft: "rgba(245,158,11,0.12)",
 };
 
 export function EventAttendanceReportPage() {
@@ -62,7 +62,7 @@ export function EventAttendanceReportPage() {
         margin: 0,
         padding: 0,
         border: "none",
-        background: `radial-gradient(ellipse 80% 60% at 50% -10%, #1a3a6e 0%, ${P.bgMid} 45%, ${P.bgTo} 100%)`,
+        background: `radial-gradient(ellipse 80% 60% at 50% -10%, rgba(225,29,72,0.08) 0%, rgba(139,92,246,0.05) 45%, #f8fafc 100%)`,
         color: P.text,
         fontFamily: "'Segoe UI', system-ui, sans-serif",
         boxSizing: "border-box" as const,
@@ -207,111 +207,7 @@ export function EventAttendanceReportPage() {
 
     return (
         <div style={bg}>
-            {/* HEADER */}
-            <header
-                style={{
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    borderBottom: `1px solid ${P.border}`,
-                    background: "rgba(9,21,40,0.6)",
-                    backdropFilter: "blur(16px)",
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 10,
-                    padding: "1rem 1.5rem",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    style={{
-                        width: "100%",
-                        maxWidth: "1100px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "1rem",
-                        flexWrap: "wrap",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: "28px",
-                                height: "28px",
-                                borderRadius: "8px",
-                                background:
-                                    "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                            }}
-                        >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 14 14"
-                                fill="none"
-                            >
-                                <path
-                                    d="M7 1.5L12 4.5v5L7 12.5 2 9.5v-5L7 1.5z"
-                                    stroke="white"
-                                    strokeWidth="1.2"
-                                    fill="none"
-                                    strokeLinejoin="round"
-                                />
 
-                                <circle
-                                    cx="7"
-                                    cy="7"
-                                    r="1.5"
-                                    fill="white"
-                                />
-                            </svg>
-                        </div>
-
-                        <span
-                            style={{
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: P.text,
-                            }}
-                        >
-                            Sistema de Eventos
-                        </span>
-                    </div>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: "10px",
-                            justifyContent: "center",
-                            flexWrap: "wrap",
-                        }}
-                    >
-                        <button
-                            onClick={() => navigate("/events")}
-                            style={btnSecondary}
-                        >
-                            ← Eventos
-                        </button>
-
-                        <button
-                            onClick={() => navigate("/app")}
-                            style={btnSecondary}
-                        >
-                            Inicio
-                        </button>
-                    </div>
-                </div>
-            </header>
 
             {/* MAIN */}
             <main
@@ -494,7 +390,7 @@ export function EventAttendanceReportPage() {
                                 height: "8px",
                                 borderRadius: "999px",
                                 background:
-                                    "rgba(255,255,255,0.06)",
+                                    "rgba(0,0,0,0.06)",
                                 overflow: "hidden",
                             }}
                         >
@@ -545,7 +441,7 @@ export function EventAttendanceReportPage() {
                                     <tr
                                         style={{
                                             background:
-                                                "rgba(255,255,255,0.03)",
+                                                "rgba(0,0,0,0.03)",
                                             borderBottom:
                                                 `1px solid ${P.border}`,
                                         }}
@@ -600,7 +496,7 @@ export function EventAttendanceReportPage() {
                                                         `1px solid ${P.border}`,
                                                     background:
                                                         idx % 2 === 1
-                                                            ? "rgba(255,255,255,0.015)"
+                                                            ? "rgba(0,0,0,0.015)"
                                                             : "transparent",
                                                 }}
                                             >
@@ -773,7 +669,7 @@ export function EventAttendanceReportPage() {
                         </button>
 
                         <button
-                            onClick={() => navigate("/events")}
+                            onClick={() => navigate("/my-events")}
                             style={btnPrimary}
                         >
                             ← Volver a eventos
@@ -786,7 +682,7 @@ export function EventAttendanceReportPage() {
 }
 
 const btnPrimary: React.CSSProperties = {
-    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+    background: "linear-gradient(135deg, #e11d48, #be123c)",
     border: "none",
     borderRadius: "10px",
     color: "#fff",
@@ -794,16 +690,16 @@ const btnPrimary: React.CSSProperties = {
     fontWeight: 600,
     padding: "10px 22px",
     cursor: "pointer",
-    boxShadow: "0 4px 14px rgba(37,99,235,0.4)",
+    boxShadow: "0 4px 14px rgba(225,29,72,0.3)",
 };
 
 const btnSecondary: React.CSSProperties = {
     background: "transparent",
-    border: "1px solid rgba(99,149,210,0.3)",
+    border: "1px solid rgba(0,0,0,0.15)",
     borderRadius: "10px",
-    color: "rgba(200,220,255,0.7)",
-    fontSize: "14px",
-    fontWeight: 500,
-    padding: "10px 22px",
+    color: "#64748b",
+    fontSize: "13px",
+    fontWeight: 600,
+    padding: "10px 18px",
     cursor: "pointer",
 };

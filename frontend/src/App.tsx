@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { DashboardLayout } from "./components/DashboardLayout";
 import { AppHome } from "./pages/AppHome";
 import { EventDetailPage } from "./pages/EventDetailPage";
 import { EventListPage } from "./pages/EventListPage";
@@ -18,6 +19,7 @@ import { UsersAdminPage } from "./pages/UsersAdminPage";
 import { RequireAdmin } from "./auth/RequireAdmin";
 import { EventFormPage } from "./pages/EventFormPage";
 import { MyEventsPage } from "./pages/MyEventsPage";
+import { LandingPage } from "./pages/LandingPage";
 
 export default function App() {
     const { isAuthenticated } = useAuth();
@@ -26,7 +28,7 @@ export default function App() {
         <Routes>
             <Route
                 path="/"
-                element={<Navigate to={isAuthenticated ? "/app" : "/login"} replace />}
+                element={<LandingPage />}
             />
 
             <Route path="/login" element={<LoginPage />} />
@@ -35,24 +37,26 @@ export default function App() {
 
             {/* Rutas protegidas (login) */}
             <Route element={<ProtectedRoute />}>
-                <Route path="/app" element={<AppHome />} />
-                <Route path="/user" element={<UserProfilePage />} />
-                <Route path="/events" element={<EventListPage />} />
-                <Route path="/events/create" element={<EventFormPage />} />
-                <Route path="/events/edit/:eventoId" element={<EventFormPage />} />
-                <Route path="/events/:eventoId" element={<EventDetailPage />} />
-                <Route path="/my-events" element={<MyEventsPage />} />
+                <Route element={<DashboardLayout />}>
+                    <Route path="/app" element={<AppHome />} />
+                    <Route path="/user" element={<UserProfilePage />} />
+                    <Route path="/events" element={<EventListPage />} />
+                    <Route path="/events/create" element={<EventFormPage />} />
+                    <Route path="/events/edit/:eventoId" element={<EventFormPage />} />
+                    <Route path="/events/:eventoId" element={<EventDetailPage />} />
+                    <Route path="/my-events" element={<MyEventsPage />} />
 
-                {/* Rutas del check-in / Reporte */}
-                <Route path="/checkin/escanear/:eventoId" element={<QrCheckinScannerPage />} />
-                <Route path="/checkin/resultado" element={<QrCheckinResultPage />} />
-                <Route path="/eventos/:eventoId/reporte" element={<EventAttendanceReportPage />} />
+                    {/* Rutas del check-in / Reporte */}
+                    <Route path="/checkin/escanear/:eventoId" element={<QrCheckinScannerPage />} />
+                    <Route path="/checkin/resultado" element={<QrCheckinResultPage />} />
+                    <Route path="/eventos/:eventoId/reporte" element={<EventAttendanceReportPage />} />
 
-                {/* SOLO ADMIN */}
-                <Route element={<RequireAdmin />}>
-                    <Route path="/admin" element={<AdminDashboardPage />} />
-                    <Route path="/admin/users" element={<UsersAdminPage />} />
-                    <Route path="/admin/actions" element={<UserActionsPage />} />
+                    {/* SOLO ADMIN */}
+                    <Route element={<RequireAdmin />}>
+                        <Route path="/admin" element={<AdminDashboardPage />} />
+                        <Route path="/admin/users" element={<UsersAdminPage />} />
+                        <Route path="/admin/actions" element={<UserActionsPage />} />
+                    </Route>
                 </Route>
             </Route>
 
