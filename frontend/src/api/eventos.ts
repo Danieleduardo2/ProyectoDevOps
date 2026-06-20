@@ -6,13 +6,16 @@ export type Event = {
     id: number;
     nombre: string;
     descripcion: string;
+    categoria: string;
     fecha: string;
     hora: string;
     ubicacion: string;
     estado: EventStatus;
     capacidadMaxima: number;
+    inscritosCount: number;
     parkingAvailable: boolean;
     parkingSpots?: number;
+    imageUrl?: string;
     createdAt?: string;
     updatedAt?: string;
     createdById?: number;
@@ -55,6 +58,7 @@ export async function getEvents(params: {
     size: number;
     nombre?: string;
     estado?: EventStatus;
+    categoria?: string;
 }) {
     const { data } = await http.get<PageResponse<Event>>("/api/events", {
         params,
@@ -102,5 +106,16 @@ export async function deleteEvent(eventoId: string | number) {
 
 export async function getEventsByUser(userId: string | number) {
     const { data } = await http.get<Event[]>(`/api/events/user/${userId}`);
+    return data;
+}
+
+export async function uploadEventImage(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await http.post<{url: string}>("/api/upload", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
     return data;
 }

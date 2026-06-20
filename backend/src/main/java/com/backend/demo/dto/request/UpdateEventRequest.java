@@ -20,12 +20,16 @@ public class UpdateEventRequest {
     @Size(max = 1000, message = "La descripción no puede superar los 1000 caracteres")
     private String descripcion;
 
+    private String categoria;
+
     private LocalDate fecha;
 
     private LocalTime hora;
 
     @Size(max = 255, message = "La ubicación no puede superar los 255 caracteres")
     private String ubicacion;
+
+    private String imageUrl;
 
     @Min(value = 1, message = "La capacidad debe ser mayor a 0")
     private Integer capacidadMaxima;

@@ -30,6 +30,9 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
+    @Builder.Default
+    private String categoria = "Otro";
+
     @Column(nullable = false)
     private LocalDate fecha;
 
@@ -38,6 +41,8 @@ public class Event {
 
     @Column(nullable = false)
     private String ubicacion;
+
+    private String imageUrl;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default

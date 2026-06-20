@@ -21,6 +21,9 @@ public class CreateEventRequest {
     @Size(max = 500, message = "La descripción no puede superar 500 caracteres")
     private String descripcion;
 
+    @NotBlank(message = "La categoría es obligatoria")
+    private String categoria;
+
     @NotNull(message = "La fecha es obligatoria")
     @FutureOrPresent(message = "La fecha no puede ser en el pasado")
     private LocalDate fecha;
@@ -30,6 +33,8 @@ public class CreateEventRequest {
 
     @NotBlank(message = "La ubicación es obligatoria")
     private String ubicacion;
+
+    private String imageUrl;
 
     private EventStatus estado;
 
