@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface UserActionRepository extends JpaRepository<UserAction, Long> {
-    List<UserAction> findByUserIdOrderByFechaDesc(Long userId);
+    List<UserAction> findByUsuarioOrderByFechaDesc(String usuario);
 }

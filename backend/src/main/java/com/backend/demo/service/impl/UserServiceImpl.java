@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.backend.demo.model.entity.UserAction;
 import com.backend.demo.dto.response.UserActionResponse;
 
 @Service
@@ -63,6 +64,7 @@ public class UserServiceImpl implements IUserService {
         user.getRoles().add(roleUser);
 
         User saved = userRepository.save(user);
+        logUserAction(saved.getEmail(), "CREACION", "Usuario registrado en el sistema");
 
         return userMapper.toResponse(saved);
     }
@@ -97,7 +99,9 @@ public class UserServiceImpl implements IUserService {
     // ELIMINAR USUARIO
     @Override
     public void deleteUser(Long id) {
-        userRepository.delete(findUserById(id));
+        User user = findUserById(id);
+        logUserAction(user.getEmail(), "ELIMINACION", "Usuario eliminado del sistema");
+        userRepository.delete(user);
     }
 
     // ACTIVAR USUARIO
@@ -105,7 +109,9 @@ public class UserServiceImpl implements IUserService {
     public UserResponse activateUser(Long id) {
         User user = findUserById(id);
         user.setActivo(true);
-        return userMapper.toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        logUserAction(saved.getEmail(), "ACTIVACION", "Usuario activado por administrador");
+        return userMapper.toResponse(saved);
     }
 
     // DESACTIVAR USUARIO
@@ -113,7 +119,9 @@ public class UserServiceImpl implements IUserService {
     public UserResponse deactivateUser(Long id) {
         User user = findUserById(id);
         user.setActivo(false);
-        return userMapper.toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        logUserAction(saved.getEmail(), "DESACTIVACION", "Usuario desactivado por administrador");
+        return userMapper.toResponse(saved);
     }
 
     // ASIGNACIÓN DE ROLES
@@ -133,6 +141,20 @@ public class UserServiceImpl implements IUserService {
 
 
     // MÉTODOS PRIVADOS
+
+    private void logUserAction(String usuario, String tipo, String descripcion) {
+        try {
+            UserAction action = UserAction.builder()
+                    .usuario(usuario)
+                    .tipo(tipo)
+                    .descripcion(descripcion)
+                    .fecha(LocalDateTime.now())
+                    .build();
+            userActionRepository.save(action);
+        } catch (Exception e) {
+            System.err.println("Error guardando historial: " + e.getMessage());
+        }
+    }
 
     private User findUserById(Long id) {
         return userRepository.findById(id)
@@ -159,8 +181,8 @@ public class UserServiceImpl implements IUserService {
         return userActionRepository.findAll(pageable)
                 .map(action -> UserActionResponse.builder()
                         .id(action.getId())
-                        .tipo(action.getTipo())
-                        .descripcion(action.getDescripcion())
+                        .usuario(action.getUsuario())
+                        .accion(action.getDescripcion())
                         .fecha(action.getFecha())
                         .build()
                 );

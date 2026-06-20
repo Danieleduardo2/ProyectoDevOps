@@ -116,6 +116,10 @@ public class InscripcionServiceImpl implements IInscripcionService {
     @Override
     public CheckinResponse realizarCheckin(Long eventoId, CheckinRequest request) {
 
+        Event evento = eventRepository.findById(eventoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Evento no encontrado"));
+        validarPermisoOrganizadorOAdmin(evento);
+
         // 1. Buscar la inscripción por token
         Inscripcion inscripcion = inscripcionRepository.findByQrToken(request.getToken())
                 .orElseThrow(() -> new BadRequestException(
@@ -146,8 +150,8 @@ public class InscripcionServiceImpl implements IInscripcionService {
         inscripcionRepository.save(inscripcion);
         emailNotificationService.sendCheckinConfirmation(inscripcion);
         User usuario = inscripcion.getUsuario();
-        Event evento = inscripcion.getEvento();
-
+        // El evento ya fue definido y validado arriba
+        
         return CheckinResponse.builder()
                 .inscripcionId(inscripcion.getId())
                 .usuarioId(usuario.getId())
@@ -168,6 +172,8 @@ public class InscripcionServiceImpl implements IInscripcionService {
         Event evento = eventRepository.findById(eventoId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Evento no encontrado con ID: " + eventoId));
+                        
+        validarPermisoOrganizadorOAdmin(evento);
 
         List<Inscripcion> inscripciones =
                 inscripcionRepository.findAllByEventoIdForReporte(eventoId);
@@ -297,6 +303,17 @@ public class InscripcionServiceImpl implements IInscripcionService {
         return user;
     }
 
+    private void validarPermisoOrganizadorOAdmin(Event event) {
+        UserInfoDetail user = getAuthenticatedUser();
+        boolean isOwner = java.util.Objects.equals(event.getCreatedBy().getId(), user.getId());
+        boolean isAdmin = user.getAuthorities().stream()
+                .anyMatch(a -> java.util.Objects.equals(a.getAuthority(), "ROLE_ADMIN"));
+        
+        if (!isOwner && !isAdmin) {
+            throw new AccessDeniedException("No autorizado para gestionar este evento");
+        }
+    }
+
     // ==================== MAPEO ====================
 
     private InscripcionResponse mapToResponse(Inscripcion inscripcion) {
@@ -307,6 +324,7 @@ public class InscripcionServiceImpl implements IInscripcionService {
                 + inscripcion.getUsuario().getApellido());
         response.setEventoId(inscripcion.getEvento().getId());
         response.setEventoNombre(inscripcion.getEvento().getNombre());
+        response.setEventoFecha(inscripcion.getEvento().getFecha());
         response.setEstado(inscripcion.getEstado());
         response.setCreatedAt(inscripcion.getCreatedAt());
         response.setCuposRestantes(

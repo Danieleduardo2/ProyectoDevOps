@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 @Builder
 public class UserActionResponse {
     private Long id;
-    private String tipo;
-    private String descripcion;
+    private String usuario;
+    private String accion;
     private LocalDateTime fecha;
 
 }

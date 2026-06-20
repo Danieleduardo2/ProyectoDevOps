@@ -125,7 +125,6 @@ public class InscripcionController {
      * Valida el QR y registra la asistencia del participante.
      */
     @PostMapping("/eventos/{eventoId}/checkin")
-    @PreAuthorize("hasRole('ORGANIZADOR') or hasRole('ADMIN')")
     public ResponseEntity<CheckinResponse> checkin(
             @PathVariable Long eventoId,
             @Valid @RequestBody CheckinRequest request) {
@@ -138,7 +137,6 @@ public class InscripcionController {
      * Retorna inscritos vs asistentes con detalle completo.
      */
     @GetMapping("/eventos/{id}/reporte")
-    @PreAuthorize("hasRole('ORGANIZADOR') or hasRole('ADMIN')")
     public ResponseEntity<ReporteAsistenciaResponse> reporte(@PathVariable Long id) {
         return ResponseEntity.ok(inscripcionService.getReporteAsistencia(id));
     }

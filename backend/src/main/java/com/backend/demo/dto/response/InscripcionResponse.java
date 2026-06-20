@@ -17,6 +17,7 @@ public class InscripcionResponse {
     private String usuarioNombre;
     private Long eventoId;
     private String eventoNombre;
+    private java.time.LocalDate eventoFecha;
     private InscripcionStatus estado;
     private LocalDateTime createdAt;
     private Integer cuposRestantes;

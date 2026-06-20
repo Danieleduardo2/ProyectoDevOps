@@ -28,6 +28,7 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final com.backend.demo.repository.UserActionRepository userActionRepository;
     private static final int MAX_FAILED_ATTEMPTS = 3;
 
     @Override
@@ -54,6 +55,17 @@ public class AuthServiceImpl implements IAuthService {
             // Login correcto → resetear intentos
             user.setFailedAttempts(0);
             userRepository.save(user);
+
+            // Log de acción
+            try {
+                com.backend.demo.model.entity.UserAction action = com.backend.demo.model.entity.UserAction.builder()
+                        .usuario(user.getEmail())
+                        .tipo("LOGIN")
+                        .descripcion("Inicio de sesión exitoso")
+                        .fecha(java.time.LocalDateTime.now())
+                        .build();
+                userActionRepository.save(action);
+            } catch (Exception e) {}
 
             String token = jwtUtil.generateToken(authentication.getName());
 

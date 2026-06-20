@@ -26,10 +26,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     WHERE (:nombre IS NULL OR LOWER(CAST(e.nombre AS string))
            LIKE LOWER(CONCAT('%', CAST(:nombre AS string), '%')))
     AND (:estado IS NULL OR e.estado = :estado)
+    AND (:categoria IS NULL OR e.categoria = :categoria)
 """)
     Page<Event> findByFilters(
             @Param("nombre") String nombre,
             @Param("estado") EventStatus estado,
+            @Param("categoria") String categoria,
             Pageable pageable
     );
 }

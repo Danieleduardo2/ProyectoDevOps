@@ -12,7 +12,7 @@ import java.util.List;
 public interface IEventService {
     EventResponse createEvent(CreateEventRequest request);
     EventResponse getEventById(Long id);
-    Page<EventResponse> getAllEvents(String nombre, EventStatus estado, Pageable pageable);
+    Page<EventResponse> getAllEvents(String nombre, EventStatus estado, String categoria, Pageable pageable);
     List<EventResponse> getEventsByUser(Long userId);
     EventResponse updateEvent(Long id, UpdateEventRequest request);
     void deleteEvent(Long id);

@@ -57,6 +57,7 @@ public class EventServiceImpl implements IEventService {
         Event event = Event.builder()
                 .nombre(request.getNombre())
                 .descripcion(request.getDescripcion())
+                .categoria(request.getCategoria() != null ? request.getCategoria() : "Otro")
                 .fecha(request.getFecha())
                 .hora(request.getHora())
                 .ubicacion(request.getUbicacion())
@@ -79,8 +80,8 @@ public class EventServiceImpl implements IEventService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<EventResponse> getAllEvents(String nombre, EventStatus estado, Pageable pageable) {
-        return eventRepository.findByFilters(nombre, estado, pageable)
+    public Page<EventResponse> getAllEvents(String nombre, EventStatus estado, String categoria, Pageable pageable) {
+        return eventRepository.findByFilters(nombre, estado, categoria, pageable)
                 .map(eventMapper::toResponse);
     }
 

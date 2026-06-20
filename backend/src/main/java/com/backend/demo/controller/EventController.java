@@ -46,8 +46,9 @@ public class EventController {
     public ResponseEntity<Page<EventResponse>> getAll(
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) EventStatus estado,
+            @RequestParam(required = false) String categoria,
             Pageable pageable) {
-        return ResponseEntity.ok(eventService.getAllEvents(nombre, estado, pageable));
+        return ResponseEntity.ok(eventService.getAllEvents(nombre, estado, categoria, pageable));
     }
 
     @Operation(summary = "Obtener detalle de un evento por ID")
