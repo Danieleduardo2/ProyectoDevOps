@@ -29,7 +29,7 @@ export function MyEventsPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    const [tab, setTab] = useState<"inscripciones" | "organizados">("inscripciones");
+    const [tab, setTab] = useState<"inscripciones" | "organizados">("organizados");
     
     // Inscriptions state
     const [inscripciones, setInscripciones] = useState<InscripcionResponse[]>([]);
@@ -107,18 +107,6 @@ export function MyEventsPage() {
 
             <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
                 <button 
-                    onClick={() => setTab("inscripciones")} 
-                    style={{ 
-                        flex: 1, padding: '15px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '1rem',
-                        background: tab === "inscripciones" ? 'linear-gradient(135deg, #a735c4, #832ab9)' : '#f5f5f5',
-                        color: tab === "inscripciones" ? '#fff' : '#666',
-                        transition: 'all 0.3s',
-                        boxShadow: tab === "inscripciones" ? '0 4px 15px rgba(167, 53, 196, 0.3)' : 'none'
-                    }}
-                >
-                    <i className="pi pi-ticket" style={{ marginRight: '8px' }}></i> Saved Events / History
-                </button>
-                <button 
                     onClick={() => setTab("organizados")} 
                     style={{ 
                         flex: 1, padding: '15px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '1rem',
@@ -129,6 +117,18 @@ export function MyEventsPage() {
                     }}
                 >
                     <i className="pi pi-calendar" style={{ marginRight: '8px' }}></i> Eventos que Organizo
+                </button>
+                <button 
+                    onClick={() => setTab("inscripciones")} 
+                    style={{ 
+                        flex: 1, padding: '15px', borderRadius: '50px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '1rem',
+                        background: tab === "inscripciones" ? 'linear-gradient(135deg, #a735c4, #832ab9)' : '#f5f5f5',
+                        color: tab === "inscripciones" ? '#fff' : '#666',
+                        transition: 'all 0.3s',
+                        boxShadow: tab === "inscripciones" ? '0 4px 15px rgba(167, 53, 196, 0.3)' : 'none'
+                    }}
+                >
+                    <i className="pi pi-ticket" style={{ marginRight: '8px' }}></i> Mis Inscripciones
                 </button>
             </div>
 
@@ -170,19 +170,19 @@ export function MyEventsPage() {
                                     
                                     return (
                                         <div key={i.id} className="ev-card">
-                                            <div className="ev-banner" style={{ background: bgGradient, height: '100px' }}></div>
-                                            <div className="ev-content">
-                                                <div className="ev-info-row">
-                                                    <div className="ev-date">
-                                                        <div className="ev-date-month">{dateObj.month}</div>
-                                                        <div className="ev-date-day">{dateObj.day}</div>
-                                                    </div>
-                                                    <div className="ev-details">
-                                                        <h4 className="ev-title">{i.eventoNombre || "Evento Desconocido"}</h4>
-                                                    </div>
+                                            <div className="ev-banner-container" style={{ height: '120px' }}>
+                                                <div className="ev-banner" style={{ background: i.eventoImageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${i.eventoImageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                                <div className="ev-date-floating">
+                                                    <div className="month">{dateObj.month}</div>
+                                                    <div className="day">{dateObj.day}</div>
                                                 </div>
-                                                <div className={`ev-pill ${i.estado === 'ACTIVO' ? 'published' : 'draft'}`} style={{ alignSelf: 'flex-start' }}>
-                                                    {i.estado}
+                                            </div>
+                                            <div className="ev-content">
+                                                <div className="ev-details" style={{ marginTop: '5px' }}>
+                                                    <h4 style={{ margin: '0 0 12px 0', fontSize: '1.25rem', color: '#1f2937', fontWeight: 700 }}>{i.eventoNombre || "Evento Desconocido"}</h4>
+                                                    <div className={`ev-pill ${i.estado === 'ACTIVO' ? 'published' : 'draft'}`} style={{ display: 'inline-block' }}>
+                                                        {i.estado === 'ACTIVO' ? 'Asistiré' : i.estado}
+                                                    </div>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', borderTop: '1px solid #f3f4f6', paddingTop: '15px' }}>
                                                     <button className="btn-outline-pink" onClick={() => handleShowQr(i.id)} style={{ flex: 1, padding: '8px' }}>
@@ -240,27 +240,27 @@ export function MyEventsPage() {
                                     const dateObj = parseDate(evt.fecha);
                                     return (
                                         <div key={evt.id} className="ev-card" onClick={() => navigate(`/events/${evt.id}`)} style={{ cursor: 'pointer' }}>
-                                            <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient, height: '100px' }}></div>
+                                            <div className="ev-banner-container" style={{ height: '120px' }}>
+                                                <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                                <div className="ev-date-floating">
+                                                    <div className="month">{dateObj.month}</div>
+                                                    <div className="day">{dateObj.day}</div>
+                                                </div>
+                                            </div>
                                             <div className="ev-content">
-                                                <div className="ev-info-row">
-                                                    <div className="ev-date">
-                                                        <div className="ev-date-month">{dateObj.month}</div>
-                                                        <div className="ev-date-day">{dateObj.day}</div>
-                                                    </div>
-                                                    <div className="ev-details">
-                                                        <h4 className="ev-title">{evt.nombre}</h4>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                            <span style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48', padding: '4px 12px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                                {evt.categoria || 'Otro'}
-                                                            </span>
-                                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: evt.estado === 'PUBLISHED' ? '#10b981' : '#6b7280', background: evt.estado === 'PUBLISHED' ? '#d1fae5' : '#f3f4f6', padding: '4px 10px', borderRadius: '10px' }}>
-                                                                {evt.estado === 'PUBLISHED' ? 'Publicado' : 'Borrador'}
-                                                            </span>
-                                                        </div>
+                                                <div className="ev-details" style={{ marginTop: '5px' }}>
+                                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: '#1f2937', fontWeight: 700 }}>{evt.nombre}</h4>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                        <span style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48', padding: '4px 12px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                            {evt.categoria || 'Otro'}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: evt.estado === 'PUBLISHED' ? '#10b981' : '#6b7280', background: evt.estado === 'PUBLISHED' ? '#d1fae5' : '#f3f4f6', padding: '4px 10px', borderRadius: '10px' }}>
+                                                            {evt.estado === 'PUBLISHED' ? 'Publicado' : 'Borrador'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 <div style={{ display: 'flex', marginTop: 'auto', borderTop: '1px solid #f3f4f6', paddingTop: '15px' }}>
-                                                    <button className="btn-solid-pink" onClick={() => navigate(`/events/${evt.id}`)} style={{ width: '100%', padding: '10px 15px', borderRadius: '50px', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(225, 29, 72, 0.2)' }}>
+                                                    <button className="btn-solid-pink" onClick={(e) => { e.stopPropagation(); navigate(`/events/${evt.id}`); }} style={{ width: '100%', padding: '10px 15px', borderRadius: '50px', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 10px rgba(225, 29, 72, 0.2)' }}>
                                                         <i className="pi pi-cog"></i> Administrar
                                                     </button>
                                                 </div>

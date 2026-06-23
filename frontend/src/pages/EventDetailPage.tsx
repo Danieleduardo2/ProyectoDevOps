@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getEvent, registerToEvent, deleteEvent, updateEventStatus, type Event } from "../api/eventos";
 import { getErrorMessage } from "../api/errorMessage";
 import { useAuth } from "../auth/AuthContext";
+import { getInscripcionesByUser } from "../api/inscripciones";
 
 export function EventDetailPage() {
     const navigate = useNavigate();
@@ -13,13 +14,26 @@ export function EventDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
+    const [isInscribed, setIsInscribed] = useState(false);
 
     const isOrganizer = user?.id === evt?.createdById;
     const canManage = isAdmin || isOrganizer;
 
     useEffect(() => {
         load();
-    }, [eventoId]);
+        checkInscription();
+    }, [eventoId, user]);
+
+    async function checkInscription() {
+        if (!user || !eventoId) return;
+        try {
+            const res = await getInscripcionesByUser(user.id, { size: 100 });
+            const found = res.content.find(i => i.eventoId === Number(eventoId) && i.estado !== 'CANCELADA');
+            setIsInscribed(!!found);
+        } catch (e) {
+            console.error("Error comprobando inscripción", e);
+        }
+    }
 
     async function load() {
         if (!eventoId) return;
@@ -41,6 +55,7 @@ export function EventDetailPage() {
             await registerToEvent(evt.id);
             alert("¡Te has inscrito al evento exitosamente! Revisa tu correo o 'Mis Eventos'.");
             await load();
+            await checkInscription();
         } catch (err) {
             alert(getErrorMessage(err));
         } finally {
@@ -140,14 +155,24 @@ export function EventDetailPage() {
                                     <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '20px', lineHeight: 1.5 }}>
                                         Regístrate para asegurar tu cupo y obtener tu código QR de acceso.
                                     </p>
-                                    <button 
-                                        className="btn-solid-pink" 
-                                        disabled={evt.estado !== 'PUBLISHED' || (evt.inscritosCount ?? 0) >= evt.capacidadMaxima || actionLoading} 
-                                        onClick={onRegister}
-                                        style={{ width: '100%', padding: '14px', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(225,29,72,0.2)' }}
-                                    >
-                                        {actionLoading ? "Procesando..." : "Inscribirme al Evento"}
-                                    </button>
+                                    {isInscribed ? (
+                                        <button 
+                                            className="btn-outline-pink" 
+                                            disabled={true} 
+                                            style={{ width: '100%', padding: '14px', fontSize: '1.05rem', background: '#ecfdf5', color: '#10b981', borderColor: '#10b981', cursor: 'not-allowed' }}
+                                        >
+                                            <i className="pi pi-check-circle" style={{ marginRight: '8px', fontWeight: 'bold' }}></i> Ya estás inscrito
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            className="btn-solid-pink" 
+                                            disabled={evt.estado !== 'PUBLISHED' || (evt.inscritosCount ?? 0) >= evt.capacidadMaxima || actionLoading} 
+                                            onClick={onRegister}
+                                            style={{ width: '100%', padding: '14px', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(225,29,72,0.2)' }}
+                                        >
+                                            {actionLoading ? "Procesando..." : "Inscribirme al Evento"}
+                                        </button>
+                                    )}
                                 </>
                             )}
 
