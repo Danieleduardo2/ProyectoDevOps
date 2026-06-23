@@ -150,32 +150,23 @@ export function EventListPage() {
                         
                         return (
                             <div key={evt.id} className="ev-card">
-                                <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                <div className="ev-banner-container">
+                                    <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                    <div className="ev-date-floating">
+                                        <div className="month">{dateObj.month}</div>
+                                        <div className="day">{dateObj.day}</div>
+                                    </div>
+                                </div>
                                 <div className="ev-content">
-                                    <div className="ev-info-row">
-                                        <div className="ev-date">
-                                            <div className="ev-date-month">{dateObj.month}</div>
-                                            <div className="ev-date-day">{dateObj.day}</div>
-                                        </div>
-                                        <div className="ev-details">
-                                            <h4 className="ev-title">{evt.nombre}</h4>
-                                            <div className="ev-location">
-                                                <i className="pi pi-map-marker" style={{ color: '#9ca3af' }}></i> {evt.ubicacion}
-                                            </div>
+                                    <div className="ev-details" style={{ marginTop: '5px' }}>
+                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: '#1f2937', fontWeight: 700 }}>{evt.nombre}</h4>
+                                        <div className="ev-location" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280', fontSize: '0.85rem' }}>
+                                            <i className="pi pi-map-marker" style={{ color: '#e11d48' }}></i> {evt.ubicacion}
                                         </div>
                                     </div>
-                                    <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '15px', marginTop: '10px' }}>
+                                    <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '20px', marginTop: '10px', lineHeight: 1.5 }}>
                                         {evt.descripcion?.substring(0, 80)}{evt.descripcion?.length > 80 ? '...' : ''}
                                     </p>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                        <span style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48', padding: '4px 12px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                            {evt.categoria || 'Otro'}
-                                        </span>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: evt.estado === 'PUBLISHED' ? '#10b981' : '#6b7280', background: evt.estado === 'PUBLISHED' ? '#d1fae5' : '#f3f4f6', padding: '4px 10px', borderRadius: '10px' }}>
-                                            {evt.estado === 'PUBLISHED' ? 'Publicado' : 'Borrador'}
-                                        </span>
-                                    </div>
 
                                     <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', borderTop: '1px solid #f3f4f6', paddingTop: '15px' }}>
                                         {evt.createdById === user?.id ? (

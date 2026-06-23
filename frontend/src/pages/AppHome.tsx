@@ -40,41 +40,17 @@ export function AppHome() {
     return (
         <div>
             {/* Welcome Section */}
-            <div className="welcome-section">
-                <h1 className="welcome-title">Te damos la bienvenida{user ? `, ${user.nombre}` : ""} 👋</h1>
-                <p className="welcome-subtitle">Accede a tus eventos, gestiona tu cuenta y navega por las funciones administrativas.</p>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="quick-actions">
-                <button className="btn-solid-pink" onClick={() => navigate("/events")}>Ver eventos →</button>
-                <button className="btn-outline-pink" onClick={() => navigate("/events/create")}>+ Crear Evento</button>
-                <a className="text-link" onClick={() => navigate("/user")} style={{ marginLeft: '10px' }}>Mi perfil</a>
-            </div>
-
-            {/* Action Cards */}
-            <div className="action-cards-grid">
-                <div className="action-card pink" onClick={() => navigate("/events")}>
-                    <div className="ac-icon pink"><i className="pi pi-compass"></i></div>
-                    <h3 className="ac-title">Explorar eventos</h3>
-                    <p className="ac-desc">Encuentra eventos recientes, revisa estados y regístrate con un solo clic.</p>
-                    <div className="ac-link pink">Ir a eventos →</div>
+            <div className="welcome-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                <div>
+                    <h1 className="welcome-title">Te damos la bienvenida{user ? `, ${user.nombre}` : ""} 👋</h1>
+                    <p className="welcome-subtitle">Administra tus eventos y mantente al día con tus actividades.</p>
                 </div>
-
-                <div className="action-card purple" onClick={() => navigate("/user")}>
-                    <div className="ac-icon purple"><i className="pi pi-user"></i></div>
-                    <h3 className="ac-title">Mi módulo de usuario</h3>
-                    <p className="ac-desc">Revisa tus inscripciones, tu perfil y los eventos que tienes pendientes.</p>
-                    <div className="ac-link purple">Mi usuario →</div>
-                </div>
-
-                <div className="action-card green" onClick={() => isAdmin && navigate("/admin")} style={{ opacity: isAdmin ? 1 : 0.7, cursor: isAdmin ? 'pointer' : 'not-allowed' }}>
-                    <div className="ac-icon green"><i className="pi pi-cog"></i></div>
-                    <h3 className="ac-title">Administración</h3>
-                    <p className="ac-desc">{isAdmin ? "Acceso completo a la gestión de la plataforma." : "Acceso restringido para administradores."}</p>
-                    <div className="ac-link green" style={{ color: isAdmin ? '#10b981' : '#9ca3af' }}>{isAdmin ? 'Ir al admin →' : 'Sin acceso'}</div>
-                </div>
+                <button className="btn-solid-pink" onClick={() => navigate("/events/create")} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '1.05rem', borderRadius: '50px', boxShadow: '0 4px 15px rgba(225, 29, 72, 0.2)' }}>
+                    <i className="pi pi-plus" style={{ fontWeight: 'bold' }}></i> Crear Evento
+                </button>
             </div>
+            
+            <div style={{ height: '60px' }}></div>
 
             {/* Mis Eventos Section */}
             <div className="section-header">
@@ -98,33 +74,25 @@ export function AppHome() {
                         const bgGradient = gradients[idx % gradients.length];
                         return (
                             <div key={evt.id} className="ev-card" onClick={() => navigate(`/events/${evt.id}`)} style={{ cursor: 'pointer' }}>
-                                <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                <div className="ev-banner-container">
+                                    <div className="ev-banner" style={{ background: evt.imageUrl ? `url(${import.meta.env.VITE_API_BASE_URL || ''}${evt.imageUrl}) center/cover no-repeat` : bgGradient }}></div>
+                                    <div className="ev-date-floating">
+                                        <div className="month">{dateObj.month}</div>
+                                        <div className="day">{dateObj.day}</div>
+                                    </div>
+                                </div>
                                 <div className="ev-content">
-                                    <div className="ev-info-row">
-                                        <div className="ev-date">
-                                            <div className="ev-date-month">{dateObj.month}</div>
-                                            <div className="ev-date-day">{dateObj.day}</div>
-                                        </div>
-                                        <div className="ev-details">
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                <span style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48', padding: '4px 12px', borderRadius: '15px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                    {evt.categoria || 'Otro'}
-                                                </span>
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: evt.estado === 'PUBLISHED' ? '#10b981' : '#6b7280', background: evt.estado === 'PUBLISHED' ? '#d1fae5' : '#f3f4f6', padding: '4px 10px', borderRadius: '10px' }}>
-                                                    {evt.estado === 'PUBLISHED' ? 'Publicado' : 'Borrador'}
-                                                </span>
-                                            </div>
-                                            <h4 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', color: '#1f2937' }}>{evt.nombre}</h4>
-                                            <div className="ev-location">
-                                                <i className="pi pi-map-marker" style={{ color: '#9ca3af' }}></i> {evt.ubicacion}
-                                            </div>
+                                    <div className="ev-details" style={{ marginTop: '5px' }}>
+                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1.25rem', color: '#1f2937', fontWeight: 700 }}>{evt.nombre}</h4>
+                                        <div className="ev-location" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280', fontSize: '0.85rem' }}>
+                                            <i className="pi pi-map-marker" style={{ color: '#e11d48' }}></i> {evt.ubicacion}
                                         </div>
                                     </div>
-                                    <div className="ev-footer">
-                                        <div className="ev-footer-item"><i className="pi pi-eye"></i> 320</div>
-                                        <div className="ev-footer-item"><i className="pi pi-users"></i> {evt.capacidadMaxima}</div>
-                                        <div className="ev-footer-action"><i className="pi pi-share-alt"></i></div>
-                                        <div className="ev-footer-action"><i className="pi pi-ellipsis-h"></i></div>
+                                    <div className="ev-footer" style={{ borderTop: '1px solid #f3f4f6', paddingTop: '15px', marginTop: 'auto' }}>
+                                        <div className="ev-footer-item"><i className="pi pi-users" style={{ color: '#8b5cf6', fontSize: '1.1rem' }}></i> <span style={{ fontWeight: 600 }}>{evt.capacidadMaxima}</span> <span style={{fontSize: '0.8rem'}}>cupos</span></div>
+                                        <div className="ev-footer-action" style={{ background: '#fff0f5', color: '#e11d48', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            Ver <i className="pi pi-arrow-right" style={{ fontSize: '0.7rem' }}></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
