@@ -22,5 +22,6 @@ public class InscripcionResponse {
     private LocalDateTime createdAt;
     private Integer cuposRestantes;
     private String qrUrl;
+    private String eventoImageUrl;
 
 }

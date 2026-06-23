@@ -11,6 +11,7 @@ export type InscripcionResponse = {
     asistio: boolean;
     checkinAt?: string | null;
     qrUrl?: string;
+    eventoImageUrl?: string;
 };
 
 export type PageResponse<T> = {

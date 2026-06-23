@@ -43,6 +43,8 @@ services:
       SMTP_STARTTLS_REQUIRED: ${SMTP_STARTTLS_REQUIRED:-true}
       SMTP_FROM: ${SMTP_FROM:-noreply@eventos.local}
     restart: always
+    volumes:
+      - ./uploads:/app/uploads
 
 volumes:
   pgdata:

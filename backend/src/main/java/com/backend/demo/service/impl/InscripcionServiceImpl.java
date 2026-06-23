@@ -332,6 +332,7 @@ public class InscripcionServiceImpl implements IInscripcionService {
                         - inscripcion.getEvento().getInscritosCount());
         // URL del QR disponible en la respuesta de consulta
         response.setQrUrl(qrService.generarUrlQr(inscripcion.getQrToken()));
+        response.setEventoImageUrl(inscripcion.getEvento().getImageUrl());
         return response;
     }
 }
