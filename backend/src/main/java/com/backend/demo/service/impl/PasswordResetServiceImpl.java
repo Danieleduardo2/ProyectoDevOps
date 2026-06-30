@@ -6,9 +6,11 @@ import com.backend.demo.exception.ResourceNotFoundException;
 import com.backend.demo.model.entity.PasswordResetToken;
 import com.backend.demo.repository.PasswordResetTokenRepository;
 import com.backend.demo.repository.UserRepository;
+import com.backend.demo.service.IEmailNotificationService;
 import com.backend.demo.service.IPasswordResetService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,10 @@ public class PasswordResetServiceImpl implements IPasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final IEmailNotificationService emailNotificationService;
+
+    @Value("${frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Override
     public void forgotPassword(String email) {
@@ -45,12 +51,15 @@ public class PasswordResetServiceImpl implements IPasswordResetService {
 
         tokenRepository.save(resetToken);
 
-        String link = "http://localhost:3000/reset-password?token=" + token;
+        String link = frontendUrl + "/reset-password?token=" + token;
 
         log.info("=================================");
         log.info(" RESET PASSWORD LINK:");
         log.info(link);
         log.info("=================================");
+
+        // Enviar el correo real
+        emailNotificationService.sendPasswordResetEmail(user.getEmail(), user.getNombre(), link);
     }
 
     @Override

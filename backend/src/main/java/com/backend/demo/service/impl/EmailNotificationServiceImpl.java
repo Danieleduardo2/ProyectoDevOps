@@ -167,4 +167,30 @@ public class EmailNotificationServiceImpl implements IEmailNotificationService {
             throw new RuntimeException("Error enviando correo", ex);
         }
     }
+
+    @Async
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 2000))
+    @Override
+    public void sendPasswordResetEmail(String toEmail, String userName, String resetLink) {
+        log.info("Enviando email de recuperación de contraseña a {}", toEmail);
+        try {
+            Context context = new Context();
+            context.setVariable("nombre", userName);
+            context.setVariable("link", resetLink);
+
+            String body = templateEngine.process("email-password-reset", context);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
+            helper.setFrom(mailFrom);
+            helper.setTo(toEmail);
+            helper.setSubject("Recuperación de contraseña - ALLEvents");
+            helper.setText(body, true);
+
+            mailSender.send(message);
+        } catch (Exception ex) {
+            log.error("Error enviando email de recuperación de contraseña a {}", toEmail, ex);
+            throw new RuntimeException("Error enviando correo de recuperación", ex);
+        }
+    }
 }

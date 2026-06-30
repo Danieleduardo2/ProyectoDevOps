@@ -14,4 +14,6 @@ public interface IEmailNotificationService {
     void sendEventUpdateNotifications(Event event, List<Inscripcion> inscripciones);
 
     void sendEventReminders(List<Inscripcion> inscripciones);
+
+    void sendPasswordResetEmail(String toEmail, String userName, String resetLink);
 }
